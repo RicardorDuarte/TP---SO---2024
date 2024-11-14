@@ -12,7 +12,7 @@ int is_invalid_command(const char *comando);
 
 
 typedef struct User{
-    char nome_utilizador[10];
+    char nome_utilizador[20];
     pid_t pid;
 }usr;
 
