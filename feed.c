@@ -42,7 +42,7 @@ int main(int argc, char * argv[])
         exit(1);
     }
     user.pid = getpid();
-    printf("%d, %s",user.pid, user.nome_utilizador);
+    printf("%d, %s\n",user.pid, user.nome_utilizador);
 
     sprintf(feedpipe_final,"FEED_FIFO[%d]",getpid());
     if(mkfifo(feedpipe_final,0666) == -1){
@@ -56,7 +56,8 @@ int main(int argc, char * argv[])
     fd_mngr_fifo = open (ManPipe,O_WRONLY);
         if (fd_mngr_fifo == -1){
             printf("Erro a abrir o pipe do manager, ou pipe nao existe\n");
-        return -1;
+            unlink(feedpipe_final);
+            return -1;
         }
         //fazer aqui averificação de possibilidade de adicionar utilizador no manager
         //melhor fazer com sinais, 3 situações: sucesso - falha por nome igual - falha por max
