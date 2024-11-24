@@ -1,38 +1,7 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <string.h>
-#include <unistd.h>
-#include <time.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include "manager.h"
 #define ManPipe "MANAGER_FIFO"
 #define FeedPipe "FEED_FIFO[%d]"
 char feedpipe_final[100];
-
-//list_user(pman manager){
-//
-//};
-//remove(pman manager, const char username){
-//
-//};
-//list_topics(pman manager){
-//
-//};
-//
-//print_topic(pman manager,const char topic){
-//
-//};
-//lock_topic(pman manager,const char topic){
-//
-//};
-//unlock_topic(pman manager,const char topic){
-//
-//};
-//
 
 
 
