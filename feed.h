@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <string.h>
-#include <unistd.h>
-#include <time.h>
-#include <stdlib.h>
-#include <errno.h>
-
-
+#include "utils.h"
 
 int is_invalid_command(const char *comando);
 
