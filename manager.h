@@ -1,7 +1,6 @@
 #ifndef MANAGER_H
 #define MANAGER_H
-#define MAXUSERS 10
-#define MAXTOPICS 20
+#include "utils.h"
 
 typedef struct User usr, *pusr;
 struct User{
@@ -14,8 +13,8 @@ typedef struct Mensagem msg,*pmsg;
 struct Mensagem{
 	char topico[15];
     char corpo[450];
-    //int duracao;
-    //char texto[300];
+    int duracao;
+    int npersistentes;
 	pid_t pid;
 };
 
@@ -23,6 +22,7 @@ typedef struct Topic tp,*ptp;
 struct Topic{
 	char topico[20];
 	msg conteudo;
+    int lock;
 };
 
 typedef struct Manager man,*pman;
@@ -32,12 +32,7 @@ struct Manager{
     int ntopicos;
     tp topicos[MAXTOPICS];
 };
-//list_user(pman manager);
-//remove(pman manager, const char username);
-//list_topics(pman manager);
-//print_topic(pman manager,const char topic);
-//lock_topic(pman manager,const char topic);
-//unlock_topic(pman manager,const char topic);
+
 
 #endif
 
