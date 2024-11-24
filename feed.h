@@ -8,6 +8,7 @@
 #include <errno.h>
 
 
+
 int is_invalid_command(const char *comando);
 
 
@@ -17,8 +18,10 @@ typedef struct User{
 }usr;
 
 typedef struct{
-    char topico[10];
-    int duracao;
-    char texto[300];
+    char comando[15];
+    char corpo[450];
+    //int duracao;
+    //char texto[300];
+    pid_t pid;
 }message;
 
