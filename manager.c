@@ -1,81 +1,110 @@
 #include "manager.h"
+#include "processoman.h"
+#include "processocom.h"
 #define ManPipe "MANAGER_FIFO"
 #define FeedPipe "FEED_FIFO[%d]"
 char feedpipe_final[100];
 
+void *ler_pipe(void *pdata) {
+    PipeData *pipe_data = (PipeData *)pdata;
+    msg mensagemRecebida;
+    int fd_manager_pipe = pipe_data->fd_manager_pipe;
+    man *manager = pipe_data->manager;
+    int sizeMan;
 
+    while (1) {
+        sizeMan = read(fd_manager_pipe, &mensagemRecebida, sizeof(mensagemRecebida));
 
-int main()
-{
-	man manager;
-	msg mensagemRecebida;
-	manager.nusers=0; 
-	manager.ntopicos=0;
-	char username[20];
-	char comando[20];
-	int fd_manager_pipe,sizeMan;
-	printf("Manager iniciado:\n");
-	//scanf("%c",comando);
-	char topic[20];
-	
+        if (sizeMan > 0) {
+            // Printf adicional para mostrar os dados recebidos
+            printf("Mensagem recebida do pipe:\n");
+            printf("Comando: %s\n", mensagemRecebida.comando);
+            printf("Corpo: %s\n", mensagemRecebida.corpo);
+            printf("PID: %d\n", mensagemRecebida.pid);
 
-	if(mkfifo(ManPipe,0666) == -1){
-		perror("erro a criar named pipe\n");
-		return -1;
+            // Processa o comando recebido do pipe (como se fosse digitado pelo usuário)
+            processa_comando(mensagemRecebida.corpo, manager);
+
+            // Verifica se a mensagem "sair" foi recebida
+            if (strcmp(mensagemRecebida.corpo, "sair") == 0) {
+                close(fd_manager_pipe);
+                unlink(ManPipe);
+                exit(1);
+            }
+        } else if (sizeMan == 0) {
+            printf("Pipe fechado pelo outro processo.\n");
+            break; // Encerra o loop se o pipe for fechado.
+        } else {
+            perror("Erro ao ler do pipe");
+            break; // Encerra o loop em caso de erro.
+        }
 	}
 
-	fd_manager_pipe = open(ManPipe,O_RDONLY);
-	if(fd_manager_pipe == -1){
-		perror("erro a abrir named pipe\n");
-		return -1;
-	}
+}
 
+int main() {
+    man manager;
+    pthread_t tid_pipe;
+    PipeData pipe_data;
+    char comando[20];
+    char username[20];
+    char topic[20];
+    int fd_manager_pipe;
 
-	//receber e tratar mensagens:
-	while(1){
-		sizeMan = read(fd_manager_pipe,&mensagemRecebida,sizeof(mensagemRecebida));
-		if(sizeMan > 0){
-			printf("%s, %s, %d\n ",mensagemRecebida.topico,mensagemRecebida.corpo,mensagemRecebida.pid);
-			
-			if(strcmp(mensagemRecebida.corpo,"sair") == 0){
-				close(fd_manager_pipe);
-				unlink(ManPipe);
-				exit(1);
-			}
-			sprintf(feedpipe_final,"FEED_FIFO[%d]",getpid());
-			
-		}
-	}
+    // Inicializa o manager
+    manager.nusers = 0;
+    manager.ntopicos = 0;
 
+    // Verifica se o FIFO já existe antes de tentar criá-lo
+    if (access(ManPipe, F_OK) == -1) {  // Verifica se o FIFO já existe
+        if (mkfifo(ManPipe, 0666) == -1) {
+            perror("Erro ao criar o FIFO");
+            return -1;
+        } else {
+            printf("FIFO '%s' criado com sucesso.\n", ManPipe);
+        }
+    } else {
+        printf("FIFO '%s' já existe. Ignorando criação.\n", ManPipe);
+    }
 
-	
-	
-	//interação com teclado, não implementado ainda por falta de threads:
-	//if(strcmp(comando,"users")==0){
-	//	list_user(manager);
-	//}
-	//else if(strcmp(comando,"remove")==0){
-	//	scanf("%s",username);
-	//	remove(manager, username);}
-	//else if(strcmp(comando,"topics")==0){
-	//	list_topics(manager);
-	//}
-	//else if(strcmp(comando,"show")==0){
-	//	scanf("%s", topic);
-	//	print_topic(manager,topic);
-	//}else if(strcmp(comando,"lock")==0){
-	//	scanf("%s", topic);
-	//	lock_topic(manager,topic);
-	//}
-	//else if(strcmp(comando,"unlock")==0){
-	//	scanf("%s", topic);
-	//	unlock_topic(manager,topic);
-	//}
-	//else if(strcmp(comando,"close")==0){
-	//	exit(0);}//falta impletmentar saida ordeira
-	//else{
-	//	printf("Comando desconhecido\n");//enviar pipe(falta implementar)
-	//}
+    // Abre o FIFO para leitura
+    fd_manager_pipe = open(ManPipe, O_RDWR);//aberto para leitura e escrita para nao ficar preso
+    if (fd_manager_pipe == -1) {
+        perror("Erro ao abrir o FIFO");
+        return -1;
+    }
+    printf("FIFO '%s' aberto com sucesso.\n", ManPipe);
 
-	return 0;
+    // Prepara os dados para a thread ler o pipe
+    pipe_data.fd_manager_pipe = fd_manager_pipe;
+    pipe_data.manager = &manager;
+
+    // Cria a thread para ler do pipe
+    if (pthread_create(&tid_pipe, NULL, ler_pipe, (void *)&pipe_data) != 0) {
+        perror("Erro ao criar thread para ler do pipe");
+        close(fd_manager_pipe);
+        unlink(ManPipe);
+        return -1;
+    }
+
+    // Loop de interação com o usuário
+    do {
+        printf("CMD> ");
+        fflush(stdout);
+        scanf("%s", comando);
+        
+        // Processa o comando digitado pelo usuário
+        processa_comando(comando, &manager);
+
+    } while (strcmp(comando, "exit") != 0);
+
+    // Espera a thread de leitura do pipe finalizar
+    pthread_join(tid_pipe, NULL);
+
+    // Finaliza a execução
+    close(fd_manager_pipe);
+    unlink(ManPipe);
+
+    printf("FIM\n");
+    return 0;
 }
