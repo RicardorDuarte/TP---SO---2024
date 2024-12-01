@@ -11,7 +11,7 @@ void *ler_pipe(void *pdata) {
     int fd_manager_pipe = pipe_data->fd_manager_pipe;
     man *manager = pipe_data->manager;
     int sizeMan;
-
+    
     while (1) {
         sizeMan = read(fd_manager_pipe, &mensagemRecebida, sizeof(mensagemRecebida));
 
@@ -39,7 +39,7 @@ void *ler_pipe(void *pdata) {
             break; // Encerra o loop em caso de erro.
         }
 	}
-
+    return NULL;
 }
 
 int main() {
@@ -47,15 +47,14 @@ int main() {
     pthread_t tid_pipe;
     PipeData pipe_data;
     char comando[20];
-    char username[20];
-    char topic[20];
+    //char username[20];
+    //char topic[20];
     int fd_manager_pipe;
 
     // Inicializa o manager
     manager.nusers = 0;
     manager.ntopicos = 0;
 
-    // Verifica se o FIFO já existe antes de tentar criá-lo
     if (access(ManPipe, F_OK) == -1) {  // Verifica se o FIFO já existe
         if (mkfifo(ManPipe, 0666) == -1) {
             perror("Erro ao criar o FIFO");
@@ -67,7 +66,6 @@ int main() {
         printf("FIFO '%s' já existe. Ignorando criação.\n", ManPipe);
     }
 
-    // Abre o FIFO para leitura
     fd_manager_pipe = open(ManPipe, O_RDWR);//aberto para leitura e escrita para nao ficar preso
     if (fd_manager_pipe == -1) {
         perror("Erro ao abrir o FIFO");
