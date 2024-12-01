@@ -12,11 +12,11 @@ struct User{
 
 typedef struct Mensagem msg,*pmsg;
 struct Mensagem{
-    char comando[20];
-	char topico[15];
+    char comando[15];
+    char topico[15];
     char corpo[450];
     int duracao;
-    int npersistentes;
+    //int npersistentes; este n persistentes n pode ficar aqui, isto so recebe msgs
 	pid_t pid;
 };
 
