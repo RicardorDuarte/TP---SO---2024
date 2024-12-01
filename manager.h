@@ -1,7 +1,8 @@
 #ifndef MANAGER_H
 #define MANAGER_H
 #include "utils.h"
-
+#include "processoman.h"
+#include "processocom.h"
 typedef struct User usr, *pusr;
 struct User{
 	char nome_utilizador[20];
@@ -11,6 +12,7 @@ struct User{
 
 typedef struct Mensagem msg,*pmsg;
 struct Mensagem{
+    char comando[20];
 	char topico[15];
     char corpo[450];
     int duracao;
@@ -33,6 +35,10 @@ struct Manager{
     tp topicos[MAXTOPICS];
 };
 
+typedef struct {
+    int fd_manager_pipe;
+    man *manager;
+} PipeData;
 
 #endif
 
