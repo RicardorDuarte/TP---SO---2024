@@ -12,9 +12,9 @@ int is_invalid_command(const char *comando) {
            strcmp(comando, "users") != 0;
 }
 
-int is_invalid_login(const char *comando, const char *corpo){
-    return strcmp(comando,"login") == 0 && strcmp(corpo,"login");
-}
+//int is_invalid_login(const char *comando, const char *corpo){
+//    return strcmp(comando,"login") == 0 && strcmp(corpo,"login");
+//}
 
 int main(int argc, char * argv[])
 {
@@ -30,7 +30,7 @@ int main(int argc, char * argv[])
 
     strcpy(user.nome_utilizador, argv[1]);
     if (strlen(user.nome_utilizador) > 20) {
-        printf("\nNome demasiado grande, tente outra vez com um nome menor\n");
+        printf("Nome demasiado grande, tente outra vez com um nome menor\n");
         exit(1);
     }
 
@@ -58,23 +58,19 @@ int main(int argc, char * argv[])
     do {
         // Lê inputs do usuário até ser introduzido um comando válido
         do {
-            printf("\nInsira um comando válido: ");
+            printf("Insira um comando válido: ");
             fgets(corpo, sizeof(corpo) - 1, stdin);
-            sscanf(corpo, "%s %[^\n]", comando, corpo);
-        } while (is_invalid_command(comando));
+            sscanf(corpo, "%s %[^\n]", msg.comando, msg.corpo);
+        } while (is_invalid_command(msg.comando));
 
-        if (strcmp(comando, "exit") == 0) {
+        if (strcmp(msg.comando, "exit") == 0) {
             unlink(feedpipe_final);
             exit(1);
         }
 
         // Print do que será enviado
-        printf("\nEnviando comando: %s\n", comando);
-        printf("Corpo da mensagem: %s\n", corpo);
-
-        // Copiar os dados para a mensagem
-        strcpy(msg.corpo, corpo);
-        strcpy(msg.comando, comando);
+        printf("\nEnviando comando: %s\n", msg.comando);
+        printf("Corpo da mensagem: %s\n", msg.corpo);
         msg.pid = getpid();
 
         // Enviar mensagem para o pipe
