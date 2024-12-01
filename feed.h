@@ -10,7 +10,9 @@ typedef struct User{
 
 typedef struct{
     char comando[15];
+    char topico[15];
     char corpo[450];
+    int duracao;
     //int duracao;
     //char texto[300];
     pid_t pid;
