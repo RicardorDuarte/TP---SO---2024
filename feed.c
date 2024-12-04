@@ -33,9 +33,8 @@ int main(int argc, char * argv[])
         printf("Nome demasiado grande, tente outra vez com um nome menor\n");
         exit(1);
     }
-
     user.pid = getpid();
-    printf("%d, %s\n", user.pid, user.nome_utilizador);
+    printf("Bem vindo %s, com o pid: %d\n",  user.nome_utilizador,user.pid);
 
     // Criando o pipe com o pid do feed
     sprintf(feedpipe_final, "FEED_FIFO[%d]", getpid());
@@ -56,27 +55,35 @@ int main(int argc, char * argv[])
     }
 
     do {
+        //limpa os campos a cada iteracao para evitar enviar a mensagem anterior
+        msg.corpo[0] = '\0';
+        msg.comando[0] = '\0';
+        msg.duracao = 0;
         // Lê inputs do usuário até ser introduzido um comando válido
         do {
             printf("Insira um comando válido: ");
-            fgets(corpo, sizeof(corpo) - 1, stdin);
+            fgets(corpo, sizeof(corpo) - 2, stdin);
             sscanf(corpo, "%s %[^\n]", msg.comando, msg.corpo);
         } while (is_invalid_command(msg.comando));
 
-        if (strcmp(msg.comando, "exit") == 0) {
-            unlink(feedpipe_final);
-            exit(1);
-        }
 
         // Print do que será enviado
         printf("\nEnviando comando: %s\n", msg.comando);
         printf("Corpo da mensagem: %s\n", msg.corpo);
         msg.pid = getpid();
 
+        if (strcmp(msg.comando, "exit") == 0) {
+            strcpy(msg.corpo, "Eu vou sair!");
+        }
         // Enviar mensagem para o pipe
         if (write(fd_mngr_fifo, &msg, sizeof(msg)) == -1) {
             perror("Erro ao enviar mensagem para o servidor");
             close(fd_mngr_fifo);
+            unlink(feedpipe_final);
+            exit(1);
+        }
+
+        if (strcmp(msg.comando, "exit") == 0) {
             unlink(feedpipe_final);
             exit(1);
         }
