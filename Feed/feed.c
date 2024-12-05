@@ -59,12 +59,12 @@ int main(int argc, char * argv[])
     printf("%d",msg.pid);
     strcpy(msg.comando,"login");
     strcpy(msg.corpo,user.nome_utilizador);
-        if (write(fd_mngr_fifo, &msg, sizeof(msg)) == -1) {
-            perror("Erro ao fazer login no servidor");
-            close(fd_mngr_fifo);
-            unlink(feedpipe_final);
-            exit(1);
-        }
+    if (write(fd_mngr_fifo, &msg, sizeof(msg)) == -1) {
+        perror("Erro ao fazer login no servidor");
+        close(fd_mngr_fifo);
+        unlink(feedpipe_final);
+        exit(1);
+    }
     do {
         //limpa os campos a cada iteracao para evitar enviar a mensagem anterior
         msg.corpo[0] = '\0';
