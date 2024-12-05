@@ -1,8 +1,7 @@
 #ifndef MANAGER_H
 #define MANAGER_H
-#include "utils.h"
-#include "processoman.h"
 #include "processocom.h"
+
 typedef struct User usr, *pusr;
 struct User{
 	char nome_utilizador[20];
@@ -16,7 +15,7 @@ struct Mensagem{
     char topico[15];
     char corpo[450];
     int duracao;
-    //int npersistentes; este n persistentes n pode ficar aqui, isto so recebe msgs
+    int npersistentes;//este n persistentes n pode ficar aqui, isto so recebe msgs
 	pid_t pid;
 };
 
