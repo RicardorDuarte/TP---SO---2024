@@ -26,7 +26,7 @@ int list_topics(pman m){
     else{
     printf("%d topicos:\n",m->ntopicos);
         for(int i=0;i<m->ntopicos;i++)
-            printf("%s %d\n",m->topicos[i].topico,m->topicos->conteudo.npersistentes);
+            printf("%s %d\n", m->topicos[i].topico, m->topicos[i].conteudo.npersistentes);
     return 1;
     }
 };
@@ -35,7 +35,7 @@ int print_topic(pman m,const char *topic){
     int i=0;
     if(m->ntopicos==0)return 0;
     else{
-        printf("Conteudo do topico %c",topic);
+        printf("Conteudo do topico %s",topic);
         if(strcmp(m->topicos[i].topico,topic)==0){
             if(m->topicos->conteudo.duracao > 0)
                 printf("%s\n",m->topicos->conteudo.corpo);
@@ -70,3 +70,18 @@ if(m->ntopicos==0)return 0;
     }
     }
 };
+
+
+//-------------------------PIPE--------------------------
+
+int pipe_topics(pman m){
+    char topicos[400];
+    if(m->ntopicos==0)return 0;
+    else{
+    printf("%d topicos:\n",m->ntopicos);
+        for(int i=0;i<m->ntopicos;i++)
+            sprintf(topicos, "%s %d\n", m->topicos[i].topico, m->topicos[i].conteudo.npersistentes);
+    return topicos;
+    }
+};
+
