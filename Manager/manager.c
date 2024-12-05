@@ -31,6 +31,7 @@ void *ler_pipe(void *pdata) {
                 processa_comando_feed(mensagemRecebida.corpo, mensagemRecebida.comando, manager);
                 //strcpy(manager->utilizador[0].nome_utilizador,mensagemRecebida.corpo);
                 printf("\ndepois: %s\n",manager->utilizador[0].nome_utilizador);
+                fflush(stdout);
             }
 
             // Verifica se a mensagem "sair" foi recebida
@@ -97,7 +98,7 @@ int main() {
         scanf("%s", comando);
         
         //// Processa o comando digitado pelo admin
-        //processa_comando(comando, &manager);
+        processa_comando_manager(comando, &manager);
 
     } while (strcmp(comando, "exit") != 0);
     // fazer um sinal para quando exit enviar alguma coisa para desbloquear a thread
