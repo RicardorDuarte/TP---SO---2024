@@ -22,8 +22,16 @@ void *ler_pipe(void *pdata) {
             printf("Corpo: %s\n", mensagemRecebida.corpo);
             printf("PID: %d\n", mensagemRecebida.pid);
 
-            // Processa o comando recebido do pipe (como se fosse digitado pelo usuário)
-            processa_comando(mensagemRecebida.corpo, manager);
+            if(strcmp(mensagemRecebida.comando,"login") == 0){
+                printf("\nantes, comando %s: %s\n",mensagemRecebida.comando,manager->utilizador[0].nome_utilizador);
+                // Processa o comando recebido do pipe (como se fosse digitado pelo usuário)
+                //
+                // deixa que eu acabo esta parte
+                //
+                processa_comando_feed(mensagemRecebida.corpo, mensagemRecebida.comando, manager);
+                //strcpy(manager->utilizador[0].nome_utilizador,mensagemRecebida.corpo);
+                printf("\ndepois: %s\n",manager->utilizador[0].nome_utilizador);
+            }
 
             // Verifica se a mensagem "sair" foi recebida
             if (strcmp(mensagemRecebida.corpo, "sair") == 0) {
@@ -31,9 +39,6 @@ void *ler_pipe(void *pdata) {
                 unlink(ManPipe);
                 exit(1);
             }
-        } else if (sizeMan == 0) {
-            printf("Pipe fechado pelo outro processo.\n");
-            break; // Encerra o loop se o pipe for fechado.
         } else {
             perror("Erro ao ler do pipe");
             break; // Encerra o loop em caso de erro.
@@ -91,11 +96,11 @@ int main() {
         fflush(stdout);
         scanf("%s", comando);
         
-        // Processa o comando digitado pelo usuário
-        processa_comando(comando, &manager);
+        //// Processa o comando digitado pelo admin
+        //processa_comando(comando, &manager);
 
     } while (strcmp(comando, "exit") != 0);
-
+    // fazer um sinal para quando exit enviar alguma coisa para desbloquear a thread
     // Espera a thread de leitura do pipe finalizar
     pthread_join(tid_pipe, NULL);
 
