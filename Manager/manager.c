@@ -1,6 +1,6 @@
 #include "manager.h"
-#include "processoman.h"
-#include "processocom.h"
+
+
 #define ManPipe "MANAGER_FIFO"
 #define FeedPipe "FEED_FIFO[%d]"
 char feedpipe_final[100];
