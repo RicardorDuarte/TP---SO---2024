@@ -1,6 +1,5 @@
-#include "utils.h"
-#include "manager.h"
-#include "processocom.h"
+#include "../Utils/utils.h"
+#include"manager.h"
 struct Manager;
 typedef struct Manager man,*pman;
 
