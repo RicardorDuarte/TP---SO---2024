@@ -1,29 +1,31 @@
-CC=gcc
-CFLAGS=-pthread -Wall -g
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c99
 
-# Diretórios de fontes e binários
-SRC_DIR=.
-OBJ_DIR=obj
-EXE=manager
+MSG_FICH = fich_mensagens
+export MSG_FICH
 
-# Arquivos fonte
-SOURCES=$(SRC_DIR)/manager.c $(SRC_DIR)/processocom.c $(SRC_DIR)/processoman.c 
-OBJECTS=$(SOURCES:.c=.o)
+# Fontes e cabeçalhos
+MANAGER_SOURCES = $(wildcard Manager/*.c) $(wildcard Comum/*.c)
+MANAGER_HEADERS = $(wildcard Manager/*.h) $(wildcard Comum/*.h)
 
-# Regra principal
-all: $(EXE)
+FEED_SOURCES = $(wildcard Feed/*.c) $(wildcard Comum/*.c)
+FEED_HEADERS = $(wildcard Feed/*.h) $(wildcard Comum/*.h)
 
-$(EXE): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^
+# Binários
+MANAGER_BIN = manager
+FEED_BIN = feed
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+# Alvo padrão
+all: $(MANAGER_BIN) $(FEED_BIN)
 
+# Regras para compilar o manager
+$(MANAGER_BIN): $(MANAGER_SOURCES) $(MANAGER_HEADERS)
+	$(CC) $(CFLAGS) -o $@ $(MANAGER_SOURCES) -lpthread
+
+# Regras para compilar o feed
+$(FEED_BIN): $(FEED_SOURCES) $(FEED_HEADERS)
+	$(CC) $(CFLAGS) -o $@ $(FEED_SOURCES) -lpthread
+
+# Limpar arquivos compilados
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(EXE)
-
-# Gerar dependências
-%.d: %.c
-	$(CC) $(CFLAGS) -M $< > $(OBJ_DIR)/$@
-
--include $(OBJ_DIR)/*.d
+	rm -f $(MANAGER_BIN) $(FEED_BIN)
