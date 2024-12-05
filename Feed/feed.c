@@ -23,7 +23,7 @@ int main(int argc, char * argv[])
     int fd_mngr_fifo, sizeM;
     usr user;
 
-    if (!argv[1]) {
+    if (argc<2) {
         printf("Nome não introduzido, por favor introduza um nome.\n");
         exit(1);
     }
@@ -56,7 +56,6 @@ int main(int argc, char * argv[])
     }
     //tenta login no manager
     msg.pid = getpid();
-    printf("%d",msg.pid);
     strcpy(msg.comando,"login");
     strcpy(msg.corpo,user.nome_utilizador);
     if (write(fd_mngr_fifo, &msg, sizeof(msg)) == -1) {

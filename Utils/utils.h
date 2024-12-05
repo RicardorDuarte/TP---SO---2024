@@ -22,6 +22,7 @@ typedef struct User usr, *pusr;
 struct User{
 	char nome_utilizador[20];
 	pid_t pid;
+    char subscrito[MAXTOPICS];
 };
 
 
