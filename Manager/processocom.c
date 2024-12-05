@@ -5,8 +5,7 @@ void processa_comando_manager(char *comando, man *manager) {
     char topic[20];
 
     if (strcmp(comando, "users") == 0) {
-        printf("users\n");
-        list_user(manager);  // Passe o endereço de 'manager' para as funções
+        list_user(manager);  
     }
     else if (strcmp(comando, "remove") == 0) {
         scanf("%s", username);
@@ -36,19 +35,19 @@ void processa_comando_manager(char *comando, man *manager) {
 
 void * processa_comando_feed(char *nome, char *comando, void *manager) {
     man *mngr = (man*)manager;
-    //char username[20];
-    //char topic[20];
+    char username[20];
+    char topic[20];
 
     if (strcmp(comando, "login") == 0) {
-        printf("ola\n");
         strcpy(mngr->utilizador[0].nome_utilizador,nome);
+        mngr->nusers++;        
     }
-    return NULL;
+
+   else if (strcmp(comando, "users") == 0) {
+       scanf("%s", username);
+       list_user(manager);
+   }
 }
-//    else if (strcmp(comando, "subscribe") == 0) {
-//        scanf("%s", username);
-//        remover(manager, username);
-//    }
 //    else if (strcmp(comando, "topics") == 0) {
 //        list_topics(manager);
 //    }
