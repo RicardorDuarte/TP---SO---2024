@@ -11,6 +11,7 @@ void *ler_pipe(void *pdata) {
     int fd_manager_pipe = pipe_data->fd_manager_pipe;
     man *manager = pipe_data->manager;
     int sizeMan;
+    char mensagemEnvia;
     
     while (1) {
         sizeMan = read(fd_manager_pipe, &mensagemRecebida, sizeof(mensagemRecebida));
@@ -24,13 +25,9 @@ void *ler_pipe(void *pdata) {
 
             if(strcmp(mensagemRecebida.comando,"login") == 0){
                 printf("\nantes, comando %s: %s\n",mensagemRecebida.comando,manager->utilizador[0].nome_utilizador);
-                // Processa o comando recebido do pipe (como se fosse digitado pelo usuário)
-                //
-                // deixa que eu acabo esta parte
-                //
                 processa_comando_feed(mensagemRecebida.corpo, mensagemRecebida.comando, manager);
-                //strcpy(manager->utilizador[0].nome_utilizador,mensagemRecebida.corpo);
-                printf("\ndepois: %s\n",manager->utilizador[0].nome_utilizador);
+                strcpy(manager->utilizador[0].nome_utilizador,mensagemRecebida.corpo);
+                manager->nusers++;
                 fflush(stdout);
             }
 
@@ -39,6 +36,9 @@ void *ler_pipe(void *pdata) {
                 close(fd_manager_pipe);
                 unlink(ManPipe);
                 exit(1);
+            }
+            else{
+                mensagemEnvia=pipe_topics(manager);
             }
         } else {
             perror("Erro ao ler do pipe");
