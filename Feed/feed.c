@@ -19,7 +19,7 @@ int is_invalid_command(const char *comando) {
 int main(int argc, char * argv[])
 {
     char comando[10], corpo[450];
-    message msg;
+    msg msg;
     int fd_mngr_fifo, sizeM;
     usr user;
 
@@ -56,6 +56,7 @@ int main(int argc, char * argv[])
     }
     //tenta login no manager
     msg.pid = getpid();
+    printf("%d",msg.pid);
     strcpy(msg.comando,"login");
     strcpy(msg.corpo,user.nome_utilizador);
         if (write(fd_mngr_fifo, &msg, sizeof(msg)) == -1) {

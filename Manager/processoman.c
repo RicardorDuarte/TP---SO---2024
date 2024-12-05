@@ -1,5 +1,4 @@
 #include "processoman.h"
-#include "processocom.h"
 
 int list_user(pman m){
     if(m->nusers==0)return 0;
