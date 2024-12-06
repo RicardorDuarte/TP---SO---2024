@@ -49,10 +49,10 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager)
                 break;
             }
         }
-        //mandar sinal para matar feed que existe
+        //mandar sinal aqui para matar feed que existe
+        
         if (!user_exists) {
-            // Add the user if they don't exist
-            if (mngr->nusers < MAXUSERS) { // Assuming MAX_USERS is defined
+            if (mngr->nusers < MAXUSERS) { 
                 strcpy(mngr->utilizador[mngr->nusers].nome_utilizador, corpo);
                 mngr->nusers++;
             } else {
@@ -71,18 +71,14 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager)
     
     if (strcmp(comando, "exit") == 0) {
         int found = 0;
-
-        // Search for the user by pid
         for (int i = 0; i < mngr->nusers; i++) {
-            if (mngr->utilizador[i].pid == pid) { // Match the user's PID with the message's PID
+            if (mngr->utilizador[i].pid == pid) { 
                 found = 1;
 
-                // Shift all subsequent users left by one position
+                // tira o buraco da estrutura
                 for (int j = i; j < mngr->nusers - 1; j++) {
-                    mngr->utilizador[j] = mngr->utilizador[j + 1]; // Copy entire structure
+                    mngr->utilizador[j] = mngr->utilizador[j + 1]; 
                 }
-
-                // Decrement the user count
                 mngr->nusers--;
 
                 printf("User with PID %d has been removed.\n", pid);
