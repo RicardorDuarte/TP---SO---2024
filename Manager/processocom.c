@@ -34,62 +34,116 @@ void processa_comando_manager(char *comando, man *manager) {
 }
 
 
-void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager) {
+void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager, void *users) {
     man *mngr = (man*)manager;
-    //char username[20];
-    //char topic[20];
+    usr *user = (usr*)users;
+    strcpy(user->nome_utilizador, corpo);  
+    user->pid = pid; 
+    
 
     if (strcmp(comando, "login") == 0) {
         int user_exists = 0;
 
-        // Check if the user already exists
+        //ja existe?
         for (int i = 0; i < mngr->nusers; i++) {
-            if (strcmp(mngr->utilizador[i].nome_utilizador, corpo) == 0) {
+            if (strcmp(mngr->utilizadores[i].nome_utilizador, corpo) == 0) {
                 user_exists = 1;
                 break;
             }
         }
-        //mandar sinal aqui para matar feed que existe
-        
+        //mandar sinal para matar feed que existe
         if (!user_exists) {
             if (mngr->nusers < MAXUSERS) { 
-                strcpy(mngr->utilizador[mngr->nusers].nome_utilizador, corpo);
+                          
+
+                mngr->utilizadores[mngr->nusers] = *user;
                 mngr->nusers++;
+
             } else {
                 printf("Impossivel adicionar mais users\n");
             }
         } else {
-            printf("User '%s' is already logged in.\n", corpo);
+            printf("User '%s' ja existe.\n", corpo);
         }
     }
     
-    if  (strcmp(comando,"users") == 0) {
+    if (strcmp(comando,"users") == 0) {
         for (int i = 0; i < mngr->nusers && i < MAXUSERS; i++) {
-                printf("User %d: %s\n", i + 1, mngr->utilizador[i].nome_utilizador);
+                printf("User %d: %s\n", i + 1, mngr->utilizadores[i].nome_utilizador);
         }
     }
     
     if (strcmp(comando, "exit") == 0) {
-        int found = 0;
-        for (int i = 0; i < mngr->nusers; i++) {
-            if (mngr->utilizador[i].pid == pid) { 
-                found = 1;
 
-                // tira o buraco da estrutura
+        int encontra = 0;
+        for (int i = 0; i < mngr->nusers; i++) {
+            if (mngr->utilizadores[i].pid == user->pid) { 
+                encontra = 1;
+                //empurra os elementos para a esquerda
                 for (int j = i; j < mngr->nusers - 1; j++) {
-                    mngr->utilizador[j] = mngr->utilizador[j + 1]; 
+                    mngr->utilizadores[j] = mngr->utilizadores[j + 1]; 
                 }
                 mngr->nusers--;
+                printf("User com PID %d foi removido.\n", pid);
+                break;
+            }
+        }
+        if (!encontra) {
+            printf("User com PID %d nao encontrado.\n", pid);
+        }
+    }
+    
+    if (strcmp(comando,"subscribe") == 0) {
+        char topico[20];
+        sscanf(corpo,"%s",topico);
+        
+        int encontra = 0;
 
-                printf("User with PID %d has been removed.\n", pid);
+        // encontra o user com o PID
+        for (int i = 0; i < mngr->nusers; i++) {
+            if (mngr->utilizadores[i].pid == pid) {
+                encontra = 1;
+
+                // verifica se esta subscrito
+                int alr_subscribed = 0;
+                for (int j = 0; j < MAXTOPICS; j++) {
+                    if (strcmp(mngr->utilizadores[i].subscrito[j], topico) == 0) {
+                        alr_subscribed = 1;
+                        printf("User '%s' ja esta subscrito no topico: '%s'.\n",
+                               mngr->utilizadores[i].nome_utilizador, topico);
+                        break;
+                    }
+                }
+
+                // se nao, subscreve
+                if (!alr_subscribed) {
+                    int add = 0;
+                
+                    for (int j = 0; j < MAXTOPICS; j++) {
+                        if (strlen(mngr->utilizadores[i].subscrito[j]) == 0) { //se pos. array for vazia
+                            strcpy(mngr->utilizadores[i].subscrito[j], topico);
+                            printf("User '%s' subscreveu ao topico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
+                            add = 1;
+                            break;
+                        }
+                    }
+                
+                    //se array cheio
+                    if (!add) {
+                        printf("User '%s' nao pode subscrever a mais tópicos, limite alcançado.\n",mngr->utilizadores[i].nome_utilizador);
+                    }
+                }
                 break;
             }
         }
 
-        if (!found) {
-            printf("User with PID %d not found.\n", pid);
+        // user nao encontrado
+        if (!encontra) {
+            printf("user com pid: %d nao encontrado.\n", pid);
         }
     }
+    return NULL;
+}
     return NULL;
 }
 
