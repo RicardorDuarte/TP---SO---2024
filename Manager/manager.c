@@ -23,13 +23,10 @@ void *ler_pipe(void *pdata) {
             printf("Corpo: %s\n", mensagemRecebida.corpo);
             printf("PID: %d\n", mensagemRecebida.pid);
 
-            if(strcmp(mensagemRecebida.comando,"login") == 0){
-                printf("\nantes, comando %s: %s\n",mensagemRecebida.comando,manager->utilizador[0].nome_utilizador);
-                processa_comando_feed(mensagemRecebida.corpo, mensagemRecebida.comando, manager);
-                strcpy(manager->utilizador[0].nome_utilizador,mensagemRecebida.corpo);
-                manager->nusers++;
-                fflush(stdout);
-            }
+            
+            processa_comando_feed(mensagemRecebida.corpo, mensagemRecebida.comando, mensagemRecebida.pid, manager);
+
+
 
             // Verifica se a mensagem "sair" foi recebida
             if (strcmp(mensagemRecebida.corpo, "sair") == 0) {
@@ -38,7 +35,7 @@ void *ler_pipe(void *pdata) {
                 exit(1);
             }
             else{
-                mensagemEnvia=pipe_topics(manager);
+                //mensagemEnvia=pipe_topics(manager);
             }
         } else {
             perror("Erro ao ler do pipe");
@@ -98,7 +95,7 @@ int main() {
         scanf("%s", comando);
         
         //// Processa o comando digitado pelo admin
-        processa_comando_manager(comando, &manager);
+        //processa_comando_manager(comando, &manager);
 
     } while (strcmp(comando, "exit") != 0);
     // fazer um sinal para quando exit enviar alguma coisa para desbloquear a thread
