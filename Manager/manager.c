@@ -1,6 +1,5 @@
 #include "manager.h"
 
-
 #define ManPipe "MANAGER_FIFO"
 #define FeedPipe "FEED_FIFO[%d]"
 char feedpipe_final[100];
@@ -10,8 +9,9 @@ void *ler_pipe(void *pdata) {
     msg mensagemRecebida;
     int fd_manager_pipe = pipe_data->fd_manager_pipe;
     man *manager = pipe_data->manager;
+    usr user;
     int sizeMan;
-    char mensagemEnvia;
+    //char mensagemEnvia;
     
     while (1) {
         sizeMan = read(fd_manager_pipe, &mensagemRecebida, sizeof(mensagemRecebida));
@@ -24,7 +24,7 @@ void *ler_pipe(void *pdata) {
             printf("PID: %d\n", mensagemRecebida.pid);
 
             
-            processa_comando_feed(mensagemRecebida.corpo, mensagemRecebida.comando, mensagemRecebida.pid, manager);
+            processa_comando_feed(mensagemRecebida.corpo, mensagemRecebida.comando, mensagemRecebida.pid, manager, (void *)&user);
 
 
 
