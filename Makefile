@@ -5,11 +5,11 @@ MSG_FICH = fich_mensagens
 export MSG_FICH
 
 # Fontes e cabeçalhos
-MANAGER_SOURCES = $(wildcard Manager/*.c) $(wildcard Comum/*.c)
-MANAGER_HEADERS = $(wildcard Manager/*.h) $(wildcard Comum/*.h)
+MANAGER_SOURCES = $(wildcard Manager/*.c) $(wildcard Utils/*.c)
+MANAGER_HEADERS = $(wildcard Manager/*.h) $(wildcard Utils/*.h)
 
-FEED_SOURCES = $(wildcard Feed/*.c) $(wildcard Comum/*.c)
-FEED_HEADERS = $(wildcard Feed/*.h) $(wildcard Comum/*.h)
+FEED_SOURCES = $(wildcard Feed/*.c) $(wildcard Utils/*.c)
+FEED_HEADERS = $(wildcard Feed/*.h) $(wildcard Utils/*.h)
 
 # Binários
 MANAGER_BIN = manager
