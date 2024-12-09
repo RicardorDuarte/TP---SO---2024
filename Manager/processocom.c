@@ -4,15 +4,19 @@ void processa_comando_manager(char *comando, man *manager) {
     char username[20];
     char topic[20];
 
-    if (strcmp(comando, "users") == 0) {
-        //list_user(manager);  
+    if (strcmp(comando,"users") == 0) {    
+        for (int i = 0; i < mngr->nusers && i < MAXUSERS; i++) {
+                printf("User %d: %s\n", i + 1, mngr->utilizadores[i].nome_utilizador);
+        }
     }
     else if (strcmp(comando, "remove") == 0) {
         scanf("%s", username);
         //remover(manager, username);
     }
-    else if (strcmp(comando, "topics") == 0) {
-        //list_topics(manager);
+    else if (strcmp(comando,"topics") == 0) {  //altamente incompleto
+        for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
+                printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
+        }
     }
     else if (strcmp(comando, "show") == 0) {
         scanf("%s", topic);
