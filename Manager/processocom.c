@@ -173,10 +173,10 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
                 findusr = 1;
 
                 // esuer esta subscrito no topico?
-                int topic_found = 0;
+                int findtopic = 0;
                 for (int j = 0; j < MAXTOPICS; j++) {
                     if (strcmp(mngr->utilizadores[i].subscrito[j], topico) == 0) {
-                        topic_found = 1;
+                        findtopic = 1;
                         // tira o ropico do array do USER
                         mngr->utilizadores[i].subscrito[j][0] = '\0';
                         printf("User '%s' deixou de subscrever ao topico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
@@ -189,7 +189,7 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
                     }
                 }
 
-                if (!topic_found) {
+                if (!findtopic) {
                     printf("User '%s' nao e subscritor do topico '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
                 } else {
                     // verifica se o topico tem de ser removido
