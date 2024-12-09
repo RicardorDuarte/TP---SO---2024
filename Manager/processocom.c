@@ -97,25 +97,45 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
         char topico[20];
         sscanf(corpo,"%s",topico);
         
-        int encontra = 0;
+        // verifica se o topico existe no array de topicos do manager
+        int verificatopico = -1;
+        for (int i = 0; i < mngr->ntopicos; i++) {
+            if (strcmp(mngr->topicos[i].topico, topico) == 0) {
+                verificatopico = i;
+                break;
+            }
+        }
 
+        // se nao existir cria-o
+        if (verificatopico == -1) {
+            if (mngr->ntopicos < MAXTOPICS) {
+                strcpy(mngr->topicos[mngr->ntopicos].topico, topico);
+                mngr->ntopicos++;
+                printf("Topico: '%s' adicionado ao manager.\n", topico);
+            } else {
+                printf("Manager cheio de topicos, chegou ao limite de %d.\n", MAXTOPICS);
+                return NULL;
+            }
+        }
+
+        int encontra = 0;
         // encontra o user com o PID
         for (int i = 0; i < mngr->nusers; i++) {
             if (mngr->utilizadores[i].pid == pid) {
                 encontra = 1;
 
                 // verifica se esta subscrito
-                int alr_subscribed = 0;
+                int alr_subbed = 0;
                 for (int j = 0; j < MAXTOPICS; j++) {
                     if (strcmp(mngr->utilizadores[i].subscrito[j], topico) == 0) {
-                        alr_subscribed = 1;
+                        alr_subbed = 1;
                         printf("User '%s' ja esta subscrito no topico: '%s'.\n",
                                mngr->utilizadores[i].nome_utilizador, topico);
                         break;
                     }
                 }
                 // se nao, subscreve
-                if (!alr_subscribed) {
+                if (!alr_subbed) {
                     int add = 0;
                 
                     for (int j = 0; j < MAXTOPICS; j++) {
@@ -142,45 +162,80 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
     }
     
     if(strcmp(comando,"unsubscribe") == 0){
+        char topico[20];
+        sscanf(corpo,"%s",topico);
+
         int findusr = 0;
 
-        // encontra user no array com PDI
-        for (int i = 0; i < mngr->nusers; i++) {
-            if (mngr->utilizadores[i].pid == pid) {
+       // procura o user com o PID
+       for (int i = 0; i < mngr->nusers; i++) {
+           if (mngr->utilizadores[i].pid == pid) {
                 findusr = 1;
 
-                // verifica se esta subbed
-                int findtopic = 0;
+                // esuer esta subscrito no topico?
+                int topic_found = 0;
                 for (int j = 0; j < MAXTOPICS; j++) {
-                    if (strcmp(mngr->utilizadores[i].subscrito[j], corpo) == 0) {
-                        findtopic = 1;
-
-                        // substitui o topico por string vazia
+                    if (strcmp(mngr->utilizadores[i].subscrito[j], topico) == 0) {
+                        topic_found = 1;
+                        // tira o ropico do array do USER
                         mngr->utilizadores[i].subscrito[j][0] = '\0';
-                        printf("User '%s' subscreveu ao topico: '%s'.\n",mngr->utilizadores[i].nome_utilizador, corpo);
+                        printf("User '%s' deixou de subscrever ao topico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
 
-                        // puxa os elementos depois do apagado para a esquerda
                         for (int k = j; k < MAXTOPICS - 1; k++) {
                             strcpy(mngr->utilizadores[i].subscrito[k], mngr->utilizadores[i].subscrito[k + 1]);
                         }
-                        // limpa o ultimo depois de empurrar para evitar copias
                         mngr->utilizadores[i].subscrito[MAXTOPICS - 1][0] = '\0';
                         break;
                     }
                 }
-                if (!findtopic) {
-                    printf("User '%s' nao esta subscrito no topico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, corpo);
+
+                if (!topic_found) {
+                    printf("User '%s' nao e subscritor do topico '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
+                } else {
+                    // verifica se o topico tem de ser removido
+                    int temusers = 0;
+                    for (int u = 0; u < mngr->nusers; u++) {
+                        for (int t = 0; t < MAXTOPICS; t++) {
+                            if (strcmp(mngr->utilizadores[u].subscrito[t], topico) == 0) {
+                                temusers = 1;
+                                break;
+                            }
+                        }
+                        if (temusers) break;
+                    }
+
+                    // remover topico  se este nao tiver subs
+                    if (!temusers) {
+                        for (int t = 0; t < mngr->ntopicos; t++) {
+                            if (strcmp(mngr->topicos[t].topico, topico) == 0) {
+                                for (int k = t; k < mngr->ntopicos - 1; k++) {
+                                    strcpy(mngr->topicos[k].topico, mngr->topicos[k + 1].topico);
+                                }
+                                mngr->topicos[mngr->ntopicos - 1].topico[0] = '\0';
+                                mngr->ntopicos--;
+                                printf("O topico: '%s' foi removido do manager por falta de subscricoes\n", topico);
+                                break;
+                            }
+                        }
+                    }
                 }
                 break;
             }
         }
-        if (!findusr) { //so chega aqui se o managar for fechado e aberto e o feed continuar aberto (falta de login)
+        if (!findusr) { //so chega aqui se o managar for fechado e aberto e o feed continuar aberto (manager nao tem esse login)
                         //nao deve acontecer mas wtv
             printf("User %d nao encontrado, subscricao falhada\n", pid);
         }
     }
-
-    //foda-se esqueci-me que isto tem de ser feito no array de topicos, OH EGUA
+     
+    
+    if (strcmp(comando,"topics") == 0) {  
+        for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
+                printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
+        }
+    }
+    
+    
+    
     return NULL;
 }
-
