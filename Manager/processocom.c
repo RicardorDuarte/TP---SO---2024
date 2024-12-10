@@ -5,7 +5,7 @@ void processa_comando_manager(char *comando, man *manager) {
     //usr *user = (usr*)users;
     
 
-    if (strcmp(comando,"users") == 0) {    //apenas para testes!!!! este comando é so do manager!!!!!
+    if (strcmp(comando,"users") == 0) {    //apenas para testes!!!! muito incompleto!!!!!
         for (int i = 0; i < mngr->nusers && i < MAXUSERS; i++) {
                 printf("User %d: %s\n", i + 1, mngr->utilizadores[i].nome_utilizador);
         }
