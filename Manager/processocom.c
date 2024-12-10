@@ -4,19 +4,15 @@ void processa_comando_manager(char *comando, man *manager) {
     char username[20];
     char topic[20];
 
-    if (strcmp(comando,"users") == 0) {    
-        for (int i = 0; i < mngr->nusers && i < MAXUSERS; i++) {
-                printf("User %d: %s\n", i + 1, mngr->utilizadores[i].nome_utilizador);
-        }
+    if (strcmp(comando, "users") == 0) {
+        //list_user(manager);  
     }
     else if (strcmp(comando, "remove") == 0) {
         scanf("%s", username);
         //remover(manager, username);
     }
-    else if (strcmp(comando,"topics") == 0) {  //altamente incompleto
-        for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
-                printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
-        }
+    else if (strcmp(comando, "topics") == 0) {
+        //list_topics(manager);
     }
     else if (strcmp(comando, "show") == 0) {
         scanf("%s", topic);
@@ -38,12 +34,11 @@ void processa_comando_manager(char *comando, man *manager) {
 }
 
 
-void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager, void *users) {
+void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, void *manager, void *users) {
     man *mngr = (man*)manager;
     usr *user = (usr*)users;
     strcpy(user->nome_utilizador, corpo);  
     user->pid = pid; 
-    
 
     if (strcmp(comando, "login") == 0) {
         int user_exists = 0;
@@ -62,19 +57,26 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
 
                 mngr->utilizadores[mngr->nusers] = *user;
                 mngr->nusers++;
+                strcpy(resposta->corpo, "login feito\n"); 
+               
 
             } else {
                 printf("Impossivel adicionar mais users\n");
+                strcpy(resposta->corpo, "Limite users, nao adicionado\n"); 
             }
         } else {
             printf("User '%s' ja existe.\n", corpo);
         }
+
+        
     }
     
     if (strcmp(comando,"users") == 0) {    //apenas para testes!!!! este comando é so do manager!!!!!
         for (int i = 0; i < mngr->nusers && i < MAXUSERS; i++) {
                 printf("User %d: %s\n", i + 1, mngr->utilizadores[i].nome_utilizador);
+                sprintf(resposta->corpo,"user %d:%s\n",i+1,mngr->utilizadores[i].nome_utilizador);
         }
+        
     }
     
     if (strcmp(comando, "exit") == 0) {
@@ -118,6 +120,7 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
                 printf("Topico: '%s' adicionado ao manager.\n", topico);
             } else {
                 printf("Manager cheio de topicos, chegou ao limite de %d.\n", MAXTOPICS);
+                strcpy(resposta->corpo, "Limite topicos, nao criado\n"); 
                 return NULL;
             }
         }
@@ -135,6 +138,7 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
                         alr_subbed = 1;
                         printf("User '%s' ja esta subscrito no topico: '%s'.\n",
                                mngr->utilizadores[i].nome_utilizador, topico);
+                        strcpy(resposta->corpo, "User ja subscrito\n"); 
                         break;
                     }
                 }
@@ -147,6 +151,7 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
                             strcpy(mngr->utilizadores[i].subscrito[j], topico);
                             printf("User '%s' subscreveu ao topico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
                             add = 1;
+                            sprintf(resposta->corpo, "Adicinado ao topico: %s\n",topico); 
                             break;
                         }
                     }
@@ -154,6 +159,7 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
                     //se array cheio
                     if (!add) {
                         printf("User '%s' nao pode subscrever a mais tópicos, limite alcançado.\n",mngr->utilizadores[i].nome_utilizador);
+                        strcpy(resposta->corpo, "User nao pode subscrever a mais tópicos, limite alcançado."); 
                     }
                 }
                 break;
@@ -184,7 +190,7 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
                         // tira o ropico do array do USER
                         mngr->utilizadores[i].subscrito[j][0] = '\0';
                         printf("User '%s' deixou de subscrever ao topico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
-
+                        sprintf(resposta->corpo, "User deixou de subscrever ao tópico: '%s'\n",topico); 
                         for (int k = j; k < MAXTOPICS - 1; k++) {
                             strcpy(mngr->utilizadores[i].subscrito[k], mngr->utilizadores[i].subscrito[k + 1]);
                         }
@@ -195,6 +201,7 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
 
                 if (!findtopic) {
                     printf("User '%s' nao e subscritor do topico '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
+                    sprintf(resposta->corpo, "User nao subscrito ao tópico: '%s'\n",topico);
                 } else {
                     // verifica se o topico tem de ser removido
                     int temusers = 0;
@@ -218,6 +225,7 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
                                 mngr->topicos[mngr->ntopicos - 1].topico[0] = '\0';
                                 mngr->ntopicos--;
                                 printf("O topico: '%s' foi removido do manager por falta de subscricoes\n", topico);
+                                sprintf(resposta->corpo, "O topico: '%s' foi removido do manager por falta de subscricoes\n",topico);
                                 break;
                             }
                         }
@@ -231,15 +239,14 @@ void * processa_comando_feed(char *corpo, char *comando, int pid, void *manager,
             printf("User %d nao encontrado, subscricao falhada\n", pid);
         }
     }
-     
-    
+
     if (strcmp(comando,"topics") == 0) {  
-        for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
-                printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
+            for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
+                    printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
+                    sprintf(resposta->corpo, "topico %d: %s\n", i + 1, mngr->topicos[i].topico);
+            }
         }
-    }
-    
-    
-    
+
     return NULL;
 }
+
