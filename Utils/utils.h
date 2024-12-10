@@ -15,14 +15,16 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 #include <fcntl.h>
 #include <pthread.h>
+
 
 typedef struct User usr, *pusr;
 struct User{
 	char nome_utilizador[20];
 	pid_t pid;
-    	char subscrito[MAXTOPICS][20];
+    char subscrito[MAXTOPICS][20];
 };
 
 
@@ -33,14 +35,14 @@ struct Mensagem{
     char corpo[450];
     int duracao;
     int npersistentes;//este n persistentes n pode ficar aqui, isto so recebe msgs
-    pid_t pid;
+	pid_t pid;
 };
 
 typedef struct Topic tp,*ptp;
 struct Topic{
 	char topico[20];
 	msg conteudo;
-    	int lock;
+    int lock;
 };
 
 typedef struct Manager man,*pman;
@@ -53,8 +55,10 @@ struct Manager{
 
 typedef struct {
     int fd_manager_pipe;
+    int trinco;
     man *manager;
-} PipeData;
+    pthread_mutex_t *m;
+} TData;
 
 
 
