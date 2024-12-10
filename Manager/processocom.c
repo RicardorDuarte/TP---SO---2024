@@ -1,36 +1,41 @@
 #include "processocom.h"
 
 void processa_comando_manager(char *comando, man *manager) {
-    char username[20];
-    char topic[20];
+    man *mngr = (man*)manager;
+    //usr *user = (usr*)users;
+    
 
-    if (strcmp(comando, "users") == 0) {
-        //list_user(manager);  
+    if (strcmp(comando,"users") == 0) {    //apenas para testes!!!! este comando é so do manager!!!!!
+        for (int i = 0; i < mngr->nusers && i < MAXUSERS; i++) {
+                printf("User %d: %s\n", i + 1, mngr->utilizadores[i].nome_utilizador);
+        }
     }
-    else if (strcmp(comando, "remove") == 0) {
-        scanf("%s", username);
-        //remover(manager, username);
+    //else if (strcmp(comando, "remove") == 0) {
+    //    scanf("%s", username);    
+    //    //remover(manager, username);
+    //}
+    else if (strcmp(comando,"topics") == 0) {  
+        for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
+                printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
+        }
     }
-    else if (strcmp(comando, "topics") == 0) {
-        //list_topics(manager);
-    }
-    else if (strcmp(comando, "show") == 0) {
-        scanf("%s", topic);
-        //print_topic(manager, topic);
-    } else if (strcmp(comando, "lock") == 0) {
-        scanf("%s", topic);
-        //lock_topic(manager, topic);
-    }
-    else if (strcmp(comando, "unlock") == 0) {
-        scanf("%s", topic);
-        //unlock_topic(manager, topic);
-    }
-    else if (strcmp(comando, "close") == 0) {
-        exit(0); // Implementação de saída
-    }
-    else {
-        printf("Comando desconhecido\n");
-    }
+    //else if (strcmp(comando, "show") == 0) {
+    //    scanf("%s", topic);
+    //    //print_topic(manager, topic);
+    //} else if (strcmp(comando, "lock") == 0) {
+    //    scanf("%s", topic);
+    //    //lock_topic(manager, topic);
+    //}
+    //else if (strcmp(comando, "unlock") == 0) {
+    //    scanf("%s", topic);
+    //    //unlock_topic(manager, topic);
+    //}
+    //else if (strcmp(comando, "close") == 0) {
+    //    exit(0); // Implementação de saída
+    //}
+    //else {
+    //    printf("Comando desconhecido\n");
+    //}
 }
 
 
@@ -121,7 +126,6 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
             } else {
                 printf("Manager cheio de topicos, chegou ao limite de %d.\n", MAXTOPICS);
                 strcpy(resposta->corpo, "Limite topicos, nao criado\n"); 
-                return NULL;
             }
         }
 
@@ -247,6 +251,5 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
             }
         }
 
-    return NULL;
 }
 
