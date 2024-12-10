@@ -12,12 +12,9 @@ int is_invalid_command(const char *comando) {
            strcmp(comando, "users") != 0;
 }
 
-//int is_invalid_login(const char *comando, const char *corpo){
-//    return strcmp(comando,"login") == 0 && strcmp(corpo,"login");
-//}
 
 int main(int argc, char *argv[]) {
-    char comando[10], corpo[450];
+    char corpo[450];
     msg msg,msg2;
     int fd_mngr_fifo, fd_feed_fifo, res_sel;
     char feedpipe_final[50];
@@ -39,7 +36,6 @@ int main(int argc, char *argv[]) {
     user.pid = getpid();
     printf("Bem vindo %s, com o pid: %d\n", user.nome_utilizador, user.pid);
 
-    // Criando o pipe com o pid do feed
     sprintf(feedpipe_final, "FEED_FIFO[%d]", getpid());
     if (mkfifo(feedpipe_final, 0666) == -1) {
         if (errno != EEXIST) {
@@ -49,7 +45,7 @@ int main(int argc, char *argv[]) {
         printf("Named pipe com este pid já existe.\n");
     }
 
-    // Abrindo o pipe do manager para escrita
+    // abre o pipe do manager para escrita
     fd_mngr_fifo = open(ManPipe, O_WRONLY);
     if (fd_mngr_fifo == -1) {
         perror("Erro ao abrir o pipe do manager");
@@ -69,7 +65,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    // Abrindo o FIFO de feed para leitura
+    // abre o pipe do feed para leitura de respostas
     fd_feed_fifo = open(feedpipe_final, O_RDONLY );
     if (fd_feed_fifo == -1) {
         perror("Erro ao abrir pipe para receber resposta");
@@ -77,35 +73,38 @@ int main(int argc, char *argv[]) {
         unlink(feedpipe_final);
         exit(1);
     }
+
+
+
     do {
         FD_ZERO(&fds);
-        FD_SET(0, &fds); // Monitorando entrada padrão (stdin)
-        FD_SET(fd_feed_fifo, &fds); // Monitorando pipe de feed
+        FD_SET(0, &fds); // leitura teclado
+        FD_SET(fd_feed_fifo, &fds); // leitura de respostas vindas do manager
 
         // Select 
         res_sel = select(fd_feed_fifo + 1, &fds, NULL, NULL, NULL);
         if (res_sel == -1) {
             perror("Erro no select");
-            printf("errno: %d\n", errno); // Exibe o erro
+            printf("errno: %d\n", errno);
             close(fd_mngr_fifo);
             close(fd_feed_fifo);
             unlink(feedpipe_final);
             exit(1);
         }
 
-        if (FD_ISSET(0, &fds)) { // Entrada pelo stdin
-            // Limpa os campos para evitar mensagens residuais
+        if (FD_ISSET(0, &fds)) { // teclado
+            // limpa os campos para evitar lixo
             msg.corpo[0] = '\0';
             msg.comando[0] = '\0';
             msg.pid = getpid();
 
-            // Lê entrada do usuário
+
             printf("CMD> ");
             fflush(stdout);
             fgets(corpo, sizeof(corpo) - 2, stdin);
             sscanf(corpo, "%s %[^\n]", msg.comando, msg.corpo);
 
-            // Valida o comando
+            // validacao de comando
             while (is_invalid_command(msg.comando)) {
                 printf("Comando inválido, tente novamente.\nCMD> ");
                 fflush(stdout);
@@ -113,7 +112,7 @@ int main(int argc, char *argv[]) {
                 sscanf(corpo, "%s %[^\n]", msg.comando, msg.corpo);
             }
 
-            // Exibe o comando antes de enviar
+            // mostra o comando introduzido
             printf("\nEnvia comando: %s\n", msg.comando);
             printf("Corpo da mensagem: %s\n", msg.corpo);
 
@@ -131,19 +130,20 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (FD_ISSET(fd_feed_fifo, &fds)) { // Resposta no pipe
+        if (FD_ISSET(fd_feed_fifo, &fds)) { // pipe
             size = read(fd_feed_fifo, &msg2, sizeof(msg2));
             if (size > 0) {
-                printf("\nResposta do servidor ao comando %s: %s\n", msg2.comando, msg2.corpo);
+                printf("\nManager: %s\n", msg2.corpo);
                 printf("CMD> ");
-                fflush(stdout);
             } else {
-                printf("\nErro na leitura do servidor (%d)\n", size);
-                perror("Erro ao ler resposta do servidor");
+                printf("O manager foi fechado, vou encerrar.\n");
+                close(fd_feed_fifo);
+                close(fd_mngr_fifo);
+                unlink(feedpipe_final);
+                exit(0);
             }
         }
 
-        // Exibe o prompt apenas uma vez, após processar todas as entradas
         
 
         if (strcmp(msg.comando, "exit") == 0) {
