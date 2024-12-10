@@ -1,6 +1,5 @@
-#define _POSIX_C_SOURCE 200809L
-
 #include "manager.h"
+#define _POSIX_C_SOURCE 200809L
 
 #define ManPipe "MANAGER_FIFO"
 #define FeedPipe "FEED_FIFO[%d]"
@@ -8,39 +7,67 @@ char feedpipe_final[100];
 
 void acorda() {}
 
-void *ler_pipe(void *tdata) {
+void *ler_pipe(void *pdata) {
     TData *thread_data = (TData *)tdata;
+    PipeData *pipe_data = (PipeData *)pdata;
     msg mensagemRecebida;
-    int fd_manager_pipe = thread_data->fd_manager_pipe;
-    man *manager = thread_data->manager;
+    int fd_manager_pipe = pipe_data->fd_manager_pipe, fd_feed_pipe;
+    man *manager = pipe_data->manager;
     usr user;
     int sizeMan;
-    //char mensagemEnvia;
-    
-    do{
+    msg mensagemEnvia;
+    mensagemEnvia.corpo[0] = '\0';
+    mensagemEnvia.comando[0] = '\0';
+    mensagemEnvia.duracao = 0;
+    mensagemEnvia.npersistentes=0;
+    do {
         sizeMan = read(fd_manager_pipe, &mensagemRecebida, sizeof(mensagemRecebida));
-
         if (sizeMan > 0) {
-            // Printf adicional para mostrar os dados recebidos
-            printf("\nMensagem recebida do pipe:\n");
+            printf("Mensagem recebida do pipe:\n");
             printf("Comando: %s\n", mensagemRecebida.comando);
             printf("Corpo: %s\n", mensagemRecebida.corpo);
             printf("PID: %d\n", mensagemRecebida.pid);
-
+            mensagemEnvia.pid=mensagemRecebida.pid;
             pthread_mutex_lock(thread_data->m);
-            processa_comando_feed(mensagemRecebida.corpo, mensagemRecebida.comando, mensagemRecebida.pid, manager, (void *)&user);
-            pthread_mutex_unlock(thread_data->m);
+            if (strcmp(mensagemRecebida.corpo, "sair") == 0) {
+                close(fd_manager_pipe);
+                unlink(ManPipe);
+                exit(1);
+            } else {
+                processa_comando_feed(&mensagemEnvia, mensagemRecebida.corpo, mensagemRecebida.comando, mensagemRecebida.pid, manager, (void *)&user);
+                strcpy(mensagemEnvia.comando, mensagemRecebida.comando);
+                printf("\n%s, %s", mensagemEnvia.comando,mensagemEnvia.corpo);
+                printf("CMD>");
+                fflush(stdout);
+                // Constrói o nome do FIFO do feed
+                sprintf(feedpipe_final, "FEED_FIFO[%d]", mensagemRecebida.pid);
 
+                // Verifica se o FIFO existe antes de abrir
+                while (access(feedpipe_final, F_OK) == -1) {
+                    usleep(1000); // Espera 1 ms
+                }
+
+                fd_feed_pipe = open(feedpipe_final, O_WRONLY);
+                if (fd_feed_pipe == -1) {
+                    perror("Erro ao abrir o FIFO do feed");
+                }
+
+
+                if (write(fd_feed_pipe, &mensagemEnvia, sizeof(msg)) == -1) {
+                    perror("Erro ao enviar mensagem para o cliente");
+                }
             
-            //mensagemEnvia=pipe_topics(manager);
+            }
+
+            pthread_mutex_unlock(thread_data->m);
+        } else {
+            perror("Erro ao ler do pipe");
+            break; // Encerra o loop em caso de erro.
         }
-         
-	}while(thread_data->trinco == 0);
+    }while(thread_data->trinco == 0);
     close(fd_manager_pipe);
-    pthread_exit(NULL);
+    return NULL;
 }
-
-
 
 int main() {
     man manager;
