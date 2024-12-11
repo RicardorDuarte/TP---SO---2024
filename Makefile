@@ -26,6 +26,9 @@ $(MANAGER_BIN): $(MANAGER_SOURCES) $(MANAGER_HEADERS)
 $(FEED_BIN): $(FEED_SOURCES) $(FEED_HEADERS)
 	$(CC) $(CFLAGS) -o $@ $(FEED_SOURCES) -lpthread
 
+	rm FEED*
+	rm MANAGER_FIFO
+
 # Limpar arquivos compilados
 clean:
 	rm -f $(MANAGER_BIN) $(FEED_BIN)
