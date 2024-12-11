@@ -4,6 +4,7 @@
 // Definições de limites para usuários e tópicos
 #define MAXUSERS 10
 #define MAXTOPICS 20
+#define MAXMSGS 50
 
 // Inclusão de bibliotecas necessárias para o programa
 #include <stdio.h>
@@ -20,32 +21,43 @@
 #include <pthread.h>
 
 
-typedef struct User usr, *pusr;
+typedef struct 
+{
+    char ntopico[30];
+    pid_t pid;
+} Sub;
+
+
+typedef struct User usr;
 struct User{
 	char nome_utilizador[20];
 	pid_t pid;
-    char subscrito[MAXTOPICS][20];
+    int nsubscritos;
+    Sub subscrito[MAXTOPICS];
 };
 
 
-typedef struct Mensagem msg,*pmsg;
+typedef struct{
+    int duracao;
+    char corpo[450];
+}TMensagem;
+
+typedef struct Mensagem msg;
 struct Mensagem{
     char comando[15];
-    char topico[15];
     char corpo[450];
-    int duracao;
-    int npersistentes;//este n persistentes n pode ficar aqui, isto so recebe msgs
 	pid_t pid;
 };
 
-typedef struct Topic tp,*ptp;
+typedef struct Topic tp;
 struct Topic{
 	char topico[20];
-	msg conteudo;
+	TMensagem conteudo[MAXMSGS];
+    int npersistentes;
     int lock;
 };
 
-typedef struct Manager man,*pman;
+typedef struct Manager man;
 struct Manager{
     usr utilizadores[MAXUSERS];
     int nusers;
@@ -63,3 +75,4 @@ typedef struct {
 
 
 #endif 
+
