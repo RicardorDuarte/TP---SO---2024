@@ -98,9 +98,6 @@ int main(int argc, char *argv[]) {
             msg.comando[0] = '\0';
             msg.pid = getpid();
 
-
-            printf("CMD> ");
-            fflush(stdout);
             fgets(corpo, sizeof(corpo) - 2, stdin);
             sscanf(corpo, "%s %[^\n]", msg.comando, msg.corpo);
 
@@ -112,13 +109,16 @@ int main(int argc, char *argv[]) {
                 sscanf(corpo, "%s %[^\n]", msg.comando, msg.corpo);
             }
 
-            // mostra o comando introduzido
-            printf("\nEnvia comando: %s\n", msg.comando);
-            printf("Corpo da mensagem: %s\n", msg.corpo);
+            
 
             if (strcmp(msg.comando, "exit") == 0) {
                 strcpy(msg.corpo, "Eu vou sair!");
             }
+
+            // mostra o comando introduzido
+            printf("\nEnvia comando: %s\n", msg.comando);
+            if(strcmp(msg.corpo,"\0")==0){}else{
+                printf("Corpo da mensagem: %s\n", msg.corpo);}
 
             // Envia a mensagem para o manager
             if (write(fd_mngr_fifo, &msg, sizeof(msg)) == -1) {
@@ -133,8 +133,9 @@ int main(int argc, char *argv[]) {
         if (FD_ISSET(fd_feed_fifo, &fds)) { // pipe
             size = read(fd_feed_fifo, &msg2, sizeof(msg2));
             if (size > 0) {
-                printf("\nManager: %s\n", msg2.corpo);
+                printf("\nMensagem do Manager:\n%s\n", msg2.corpo);
                 printf("CMD> ");
+                fflush(stdout);
             } else {
                 printf("O manager foi fechado, vou encerrar.\n");
                 close(fd_feed_fifo);
