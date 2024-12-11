@@ -3,7 +3,7 @@
 void processa_comando_manager(char *comando, man *manager) {
     man *mngr = (man*)manager;
     //usr *user = (usr*)users;
-    
+    char topic[20];
 
     if (strcmp(comando,"users") == 0) {    //apenas para testes!!!! muito incompleto!!!!!
         for (int i = 0; i < mngr->nusers && i < MAXUSERS; i++) {
@@ -17,12 +17,14 @@ void processa_comando_manager(char *comando, man *manager) {
     else if (strcmp(comando,"topics") == 0) {  
         for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
                 printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
+                printf("mensagens percitentes: %d\n",mngr->topicos[i].npersistentes);
         }
     }
-    //else if (strcmp(comando, "show") == 0) {
-    //    scanf("%s", topic);
-    //    //print_topic(manager, topic);
-    //} else if (strcmp(comando, "lock") == 0) {
+    else if (strcmp(comando, "show") == 0) {
+        scanf("%s", topic);
+       print_topic(manager, topic);
+    } 
+    //else if (strcmp(comando, "lock") == 0) {
     //    scanf("%s", topic);
     //    //lock_topic(manager, topic);
     //}
@@ -62,6 +64,7 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
 
                 mngr->utilizadores[mngr->nusers] = *user;
                 mngr->nusers++;
+
                 strcpy(resposta->corpo, "login feito\n"); 
                
 
@@ -138,7 +141,7 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
                 // verifica se esta subscrito
                 int alr_subbed = 0;
                 for (int j = 0; j < MAXTOPICS; j++) {
-                    if (strcmp(mngr->utilizadores[i].subscrito[j], topico) == 0) {
+                    if (strcmp(mngr->utilizadores[i].subscrito[j].ntopico, topico) == 0) {
                         alr_subbed = 1;
                         printf("User '%s' ja esta subscrito no topico: '%s'.\n",
                                mngr->utilizadores[i].nome_utilizador, topico);
@@ -151,9 +154,12 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
                     int add = 0;
                 
                     for (int j = 0; j < MAXTOPICS; j++) {
-                        if (strlen(mngr->utilizadores[i].subscrito[j]) == 0) { //se pos. array for vazia
-                            strcpy(mngr->utilizadores[i].subscrito[j], topico);
-                            printf("User '%s' subscreveu ao topico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
+                        if (strlen(mngr->utilizadores[i].subscrito[j].ntopico) == 0) { //se pos. array for vazia
+                            strcpy(mngr->utilizadores[i].subscrito[j].ntopico, topico);
+                            mngr->utilizadores[i].nsubscritos++;
+                            mngr->utilizadores[i].subscrito[j].pid=pid;
+                            printf("User '%s' pid '%d' subscreveu ao topico: '%s' (%d users subscritos).\n", mngr->utilizadores[i].nome_utilizador,
+                            mngr->utilizadores[i].pid, topico,mngr->utilizadores[i].nsubscritos);
                             add = 1;
                             sprintf(resposta->corpo, "Adicinado ao topico: %s\n",topico); 
                             break;
@@ -189,16 +195,23 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
                 // esuer esta subscrito no topico?
                 int findtopic = 0;
                 for (int j = 0; j < MAXTOPICS; j++) {
-                    if (strcmp(mngr->utilizadores[i].subscrito[j], topico) == 0) {
+                    if (strcmp(mngr->utilizadores[i].subscrito[j].ntopico, topico) == 0) {
                         findtopic = 1;
-                        // tira o ropico do array do USER
-                        mngr->utilizadores[i].subscrito[j][0] = '\0';
-                        printf("User '%s' deixou de subscrever ao topico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
-                        sprintf(resposta->corpo, "User deixou de subscrever ao tópico: '%s'\n",topico); 
-                        for (int k = j; k < MAXTOPICS - 1; k++) {
-                            strcpy(mngr->utilizadores[i].subscrito[k], mngr->utilizadores[i].subscrito[k + 1]);
+
+                        // Remove o tópico do array do usuário
+                        printf("User '%s' deixou de subscrever ao tópico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
+                        sprintf(resposta->corpo, "User deixou de subscrever ao tópico: '%s'\n", topico);
+
+                        // Reorganiza o array removendo o elemento
+                        for (int k = j; k < mngr->utilizadores[i].nsubscritos - 1; k++) {
+                            mngr->utilizadores[i].subscrito[k] = mngr->utilizadores[i].subscrito[k + 1];
                         }
-                        mngr->utilizadores[i].subscrito[MAXTOPICS - 1][0] = '\0';
+
+                        // Reduz o número de tópicos subscritos e limpa a última posição
+                        mngr->utilizadores[i].nsubscritos--;
+                        mngr->utilizadores[i].subscrito[mngr->utilizadores[i].nsubscritos].ntopico[0] = '\0';//remove ultimo
+                        mngr->utilizadores[i].subscrito[mngr->utilizadores[i].nsubscritos].pid = 0;
+
                         break;
                     }
                 }
@@ -211,7 +224,7 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
                     int temusers = 0;
                     for (int u = 0; u < mngr->nusers; u++) {
                         for (int t = 0; t < MAXTOPICS; t++) {
-                            if (strcmp(mngr->utilizadores[u].subscrito[t], topico) == 0) {
+                            if (mngr->utilizadores[i].nsubscritos == 0) {
                                 temusers = 1;
                                 break;
                             }
@@ -250,6 +263,43 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
                     sprintf(resposta->corpo, "topico %d: %s\n", i + 1, mngr->topicos[i].topico);
             }
         }
+
+    if (strcmp(comando, "msg") == 0) {
+    char topico[20];
+    int duracao;
+    char msgp[20];
+
+    sscanf(corpo, "%s %d %s", topico, &duracao, msgp);
+
+    for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
+        if (strcmp(mngr->topicos[i].topico, topico) == 0) {
+            if (duracao > 0) {
+                if (mngr->topicos[i].npersistentes < MAXMSGS) {
+                    int j = mngr->topicos[i].npersistentes;
+
+                    strcpy(mngr->topicos[i].conteudo[j].corpo, msgp);
+                    mngr->topicos[i].conteudo[j].duracao = duracao;
+
+                    (mngr->topicos[i].npersistentes)++;
+
+                    printf("\nMensagem adicionada ao tópico '%s', com duração de %d segundos:\n%s\n\n",
+                           mngr->topicos[i].topico,
+                           mngr->topicos[i].conteudo[j].duracao,
+                           mngr->topicos[i].conteudo[j].corpo);
+
+                    sprintf(resposta->corpo, "Conteúdo adicionado ao tópico %s:\n%s", topico, msgp);
+                } else {
+                    printf("\nErro: limite de mensagens para o tópico '%s' foi atingido.\n", topico);
+                    sprintf(resposta->corpo, "Erro: limite de mensagens no tópico %s atingido.", topico);
+                }
+            }
+            return; 
+        }
+    }
+
+    sprintf(resposta->corpo, "Erro: tópico %s não encontrado.", topico);
+}
+
 
 }
 
