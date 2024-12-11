@@ -10,7 +10,6 @@ void acorda() {}
 
 void *ler_pipe(void *tdata) {
     TData *thread_data = (TData *)tdata;
-
     msg mensagemRecebida, mensagemEnvia;
     man *manager = thread_data->manager;
     usr user;
@@ -19,36 +18,93 @@ void *ler_pipe(void *tdata) {
     int sizeMan;
     
 
-    mensagemEnvia.corpo[0] = '\0';
-    mensagemEnvia.comando[0] = '\0';
-    mensagemEnvia.duracao = 0;
-    mensagemEnvia.npersistentes=0;
-
 
     do {
         sizeMan = read(fd_manager_pipe, &mensagemRecebida, sizeof(mensagemRecebida));
         if (sizeMan > 0) {
 
+            mensagemEnvia.corpo[0] = '\0';
+            mensagemEnvia.comando[0] = '\0';
             printf("Mensagem recebida do pipe:\n");
             printf("Comando: %s\n", mensagemRecebida.comando);
-            printf("Corpo: %s\n", mensagemRecebida.corpo);
+            if(strcmp(mensagemRecebida.corpo,"\0")==0){}else{
+            printf("Corpo: %s\n", mensagemRecebida.corpo);}
             printf("PID: %d\n", mensagemRecebida.pid);
 
             mensagemEnvia.pid=mensagemRecebida.pid;
             pthread_mutex_lock(thread_data->m);
 
 
-            if (strcmp(mensagemRecebida.corpo, "sair") == 0) {
+            if (strcmp(mensagemRecebida.comando, "sair") == 0) {
                 close(fd_manager_pipe);
                 unlink(ManPipe);
                 exit(1);
-            } else {
+            }
+            if(strcmp(mensagemRecebida.comando,"msg")==0){
+                char topico[20];
+                int duracao;
+                char msgp[20];
+
+                sscanf(mensagemRecebida.corpo, "%s %d %s", topico, &duracao, msgp);
+                printf("\nMensagem recebida para adicionar ao topico '%s', com duracao de %d segundos:\n%s\n",topico,duracao,msgp);
+
+                processa_comando_feed(&mensagemEnvia, mensagemRecebida.corpo, mensagemRecebida.comando, mensagemRecebida.pid, manager, (void *)&user);
+                strcpy(mensagemEnvia.comando, mensagemRecebida.comando);
+                printf("Número de usuários no manager: %d\n", manager->nusers);
+                for (int i = 0; i < manager->nusers; i++) {
+                                    printf("ola\n\n\n");
+
+                    for (int j = 0; j < manager->utilizadores[i].nsubscritos; j++) {
+                            printf("Usuário subscrito em: %s\n", manager->utilizadores[i].subscrito[j].ntopico);
+                        // Verifica se o utilizador está subscrito ao tópico
+                        if (strcmp(manager->utilizadores[i].subscrito[j].ntopico, topico) == 0) {
+                            printf("Enviando mensagem para o utilizador '%s' (PID: %d) subscrito no tópico '%s'.\n",
+                                manager->utilizadores[i].nome_utilizador, manager->utilizadores[i].pid, topico);
+    
+                            // Prepara o nome do pipe do feed
+                            sprintf(feedpipe_final, "FEED_FIFO[%d]", manager->utilizadores[i].pid);
+
+                            // Verifica se o pipe existe
+                            if (access(feedpipe_final, F_OK) == -1) {
+                                perror("Pipe do feed não encontrado para o utilizador");
+                                continue; // Passa para o próximo utilizador
+                            }
+
+                            // Abre o pipe para escrita
+                            fd_feed_pipe = open(feedpipe_final, O_WRONLY);
+                            if (fd_feed_pipe == -1) {
+                                perror("Erro ao abrir o FIFO do feed");
+                                continue;
+                            }
+
+                            // Envia a mensagem para o utilizador
+                            if (write(fd_feed_pipe, &mensagemEnvia, sizeof(TMensagem)) == -1) {
+                                perror("Erro ao enviar mensagem para o utilizador");
+                            } else {
+                                printf("Mensagem enviada com sucesso para '%s'.\n", manager->utilizadores[i].nome_utilizador);
+                            }
+
+                            // Fecha o pipe após o uso
+                            close(fd_feed_pipe);
+                        }
+                    }
+                }
+
+                printf("CMD> ");
+                fflush(stdout);
+                
+            } 
+            
+            else {
 
 
                 processa_comando_feed(&mensagemEnvia, mensagemRecebida.corpo, mensagemRecebida.comando, mensagemRecebida.pid, manager, (void *)&user);
                 strcpy(mensagemEnvia.comando, mensagemRecebida.comando);
-                printf("\n%s, %s", mensagemEnvia.comando,mensagemEnvia.corpo);
+                printf("Mensagem enviada:\n|Comando: %s\n", mensagemRecebida.comando);
+                if(strcmp(mensagemEnvia.corpo,"\0")==0){}else{
+                printf("|Corpo: %s\n", mensagemEnvia.corpo);}
                 printf("CMD>");
+                fflush(stdout);
 
 
                 // Constrói o nome do pipe de cada feed
