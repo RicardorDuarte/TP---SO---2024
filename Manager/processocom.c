@@ -16,8 +16,8 @@ void processa_comando_manager(char *comando, man *manager) {
     //}
     else if (strcmp(comando,"topics") == 0) {  
         for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
-                printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
-                printf("mensagens percitentes: %d\n",mngr->topicos[i].npersistentes);
+                printf("topico %d: %s", i + 1, mngr->topicos[i].topico);
+                printf(", Nº mensagens persistentes: %d\n",mngr->topicos[i].npersistentes);
         }
     }
     else if (strcmp(comando, "show") == 0) {
@@ -267,9 +267,11 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
     if (strcmp(comando, "msg") == 0) {
     char topico[20];
     int duracao;
-    char msgp[20];
+    char msgp[100]; 
 
-    sscanf(corpo, "%s %d %s", topico, &duracao, msgp);
+    sscanf(corpo, "%s %d %[^\n]", topico, &duracao, msgp);
+
+    printf("\n\ntest:%s\n\n",msgp);
 
     for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
         if (strcmp(mngr->topicos[i].topico, topico) == 0) {
@@ -287,7 +289,8 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
                            mngr->topicos[i].conteudo[j].duracao,
                            mngr->topicos[i].conteudo[j].corpo);
 
-                    sprintf(resposta->corpo, "Conteúdo adicionado ao tópico %s:\n%s", topico, msgp);
+                    sprintf(resposta->corpo, "Conteúdo adicionado ao tópico %s:\n%s", mngr->topicos[i].topico, msgp);
+                    printf("resposta->corpo:%s\n\n",resposta->corpo);
                 } else {
                     printf("\nErro: limite de mensagens para o tópico '%s' foi atingido.\n", topico);
                     sprintf(resposta->corpo, "Erro: limite de mensagens no tópico %s atingido.", topico);
