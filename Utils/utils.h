@@ -45,7 +45,7 @@ typedef struct{
 typedef struct Mensagem msg;
 struct Mensagem{
     char comando[15];
-    char corpo[450];
+    char corpo[650];
 	pid_t pid;
 };
 
