@@ -46,15 +46,13 @@ void *ler_pipe(void *tdata) {
                 strcpy(mensagemEnvia.comando, mensagemRecebida.comando);
                 printf("Número de usuários no manager: %d\n", manager->nusers);
                 for (int i = 0; i < manager->nusers; i++) {
-
                     for (int j = 0; j < manager->utilizadores[i].nsubscritos; j++) {
-                            printf("User subscrito em: %s\n", manager->utilizadores[i].subscrito[j].ntopico);
                         // Verifica se o utilizador está subscrito ao tópico
                         if (strcmp(manager->utilizadores[i].subscrito[j].ntopico, topico) == 0) {
-                            printf("Enviando mensagem para o tópico '%s'.\n", manager->topicos[j].topico);
-    
-                            // Prepara o nome do pipe do feed
-                            sprintf(feedpipe_final, "FEED_FIFO[%d]", manager->utilizadores[j].pid);
+                            printf("Enviando mensagem para o tópico '%s'.\n", manager->utilizadores[i].subscrito[j].ntopico);
+
+                            // Prepara o nome do pipe do feed usando o PID correto
+                            sprintf(feedpipe_final, "FEED_FIFO[%d]", manager->utilizadores[i].pid);
 
                             // Verifica se o pipe existe
                             if (access(feedpipe_final, F_OK) == -1) {
@@ -69,25 +67,26 @@ void *ler_pipe(void *tdata) {
                                 continue;
                             }
 
-                            
                             // Envia a mensagem para o utilizador
-                            printf("\n\n%s\n\n",mensagemEnvia.corpo);
+                            printf("\n\n%s\n\n", mensagemEnvia.corpo);
                             if (write(fd_feed_pipe, &mensagemEnvia, sizeof(mensagemEnvia)) == -1) {
                                 perror("Erro ao enviar mensagem para o utilizador");
                             } else {
-                                printf("Mensagem enviada com sucesso para o topico '%s'.\n", manager->topicos[i].topico);
+                                printf("Mensagem enviada com sucesso para o utilizador '%s' no tópico '%s'.\n", 
+                                    manager->utilizadores[i].nome_utilizador, manager->utilizadores[i].subscrito[j].ntopico);
                             }
-
+                        
                             close(fd_feed_pipe);
                         }
-                    }
+                    
+                    }            
                 }
-
                 printf("CMD> ");
                 fflush(stdout);
                 
-            } 
+                 
             
+            }
             else {
 
 
