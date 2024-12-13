@@ -107,11 +107,11 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
         }
     }
     
-    if (strcmp(comando,"subscribe") == 0) {
+    if (strcmp(comando, "subscribe") == 0) {
         char topico[20];
-        sscanf(corpo,"%s",topico);
-        
-        // verifica se o topico existe no array de topicos do manager
+        sscanf(corpo, "%s", topico);
+
+        // Verifica se o tópico já existe no manager
         int verificatopico = -1;
         for (int i = 0; i < mngr->ntopicos; i++) {
             if (strcmp(mngr->topicos[i].topico, topico) == 0) {
@@ -120,67 +120,79 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
             }
         }
 
-        // se nao existir cria-o
+        // Se o tópico não existir, cria-o
         if (verificatopico == -1) {
             if (mngr->ntopicos < MAXTOPICS) {
                 strcpy(mngr->topicos[mngr->ntopicos].topico, topico);
+                mngr->topicos[mngr->ntopicos].npersistentes = 0;
+                mngr->topicos[mngr->ntopicos].lock = 0;
+                mngr->topicos[mngr->ntopicos].ninscritos = 0;  // Inicializa o número de inscritos
                 mngr->ntopicos++;
-                printf("Topico: '%s' adicionado ao manager.\n", topico);
+                printf("Tópico '%s' adicionado ao manager.\n", topico);
             } else {
-                printf("Manager cheio de topicos, chegou ao limite de %d.\n", MAXTOPICS);
-                strcpy(resposta->corpo, "Limite topicos, nao criado\n"); 
+                printf("Manager cheio de tópicos, limite de %d alcançado.\n", MAXTOPICS);
+                strcpy(resposta->corpo, "Limite de tópicos alcançado, não criado.\n");
+                return;
             }
         }
 
+        // Encontra o usuário com o PID
         int encontra = 0;
-        // encontra o user com o PID
         for (int i = 0; i < mngr->nusers; i++) {
             if (mngr->utilizadores[i].pid == pid) {
                 encontra = 1;
 
-                // verifica se esta subscrito
+                // Verifica se o usuário já está subscrito ao tópico
                 int alr_subbed = 0;
-                for (int j = 0; j < MAXTOPICS; j++) {
+                for (int j = 0; j < mngr->utilizadores[i].nsubscritos; j++) {
                     if (strcmp(mngr->utilizadores[i].subscrito[j].ntopico, topico) == 0) {
                         alr_subbed = 1;
-                        printf("User '%s' ja esta subscrito no topico: '%s'.\n",
-                               mngr->utilizadores[i].nome_utilizador, topico);
-                        strcpy(resposta->corpo, "User ja subscrito\n"); 
+                        printf("Usuário '%s' já está subscrito ao tópico: '%s'.\n", mngr->utilizadores[i].nome_utilizador, topico);
+                        strcpy(resposta->corpo, "Usuário já subscrito.\n");
                         break;
                     }
                 }
-                // se nao, subscreve
+
+                // Se o usuário não estiver subscrito, inscreve-o
                 if (!alr_subbed) {
-                    int add = 0;
-                
-                    for (int j = 0; j < MAXTOPICS; j++) {
-                        if (strlen(mngr->utilizadores[i].subscrito[j].ntopico) == 0) { //se pos. array for vazia
-                            strcpy(mngr->utilizadores[i].subscrito[j].ntopico, topico);
-                            mngr->utilizadores[i].nsubscritos++;
-                            mngr->utilizadores[i].subscrito[j].pid=pid;
-                            printf("User '%s' pid '%d' subscreveu ao topico: '%s' (%d users subscritos).\n", mngr->utilizadores[i].nome_utilizador,
-                            mngr->utilizadores[i].pid, topico,mngr->utilizadores[i].nsubscritos);
-                            add = 1;
-                            sprintf(resposta->corpo, "Adicinado ao topico: %s\n",topico); 
-                            break;
+                    if (mngr->utilizadores[i].nsubscritos < MAXTOPICS) {
+                        strcpy(mngr->utilizadores[i].subscrito[mngr->utilizadores[i].nsubscritos].ntopico, topico);
+                        mngr->utilizadores[i].subscrito[mngr->utilizadores[i].nsubscritos].pid = pid;
+                        mngr->utilizadores[i].nsubscritos++;
+
+                        // Adiciona o PID do usuário à lista de inscritos no tópico
+                        int novo = -1;
+                        for (int j = 0; j < mngr->ntopicos; j++) {
+                            if (strcmp(mngr->topicos[j].topico, topico) == 0) {
+                                novo = j;
+                                break;
+                            }
                         }
-                    }
-                
-                    //se array cheio
-                    if (!add) {
-                        printf("User '%s' nao pode subscrever a mais tópicos, limite alcançado.\n",mngr->utilizadores[i].nome_utilizador);
-                        strcpy(resposta->corpo, "User nao pode subscrever a mais tópicos, limite alcançado."); 
+                        if (novo != -1) {
+                            mngr->topicos[novo].inscritos[mngr->topicos[novo].ninscritos] = pid;
+                            mngr->topicos[novo].ninscritos++;
+                        }
+
+                        printf("Usuário '%s' (PID %d) subscreveu ao tópico '%s'. (%d subscritos)\n", 
+                        mngr->utilizadores[i].nome_utilizador, pid, topico, mngr->topicos[novo].ninscritos);
+                        sprintf(resposta->corpo, "Adicionado ao tópico: %s\n", topico);
+                    } else {
+                        printf("Usuário '%s' não pode subscrever a mais tópicos, limite alcançado.\n", mngr->utilizadores[i].nome_utilizador);
+                        strcpy(resposta->corpo, "Limite de tópicos alcançado.\n");
                     }
                 }
                 break;
             }
         }
-        if (!encontra) { //so chega aqui se o managar for fechado e aberto e o feed continuar aberto (falta de login)
-                         //nao deve acontecer mas wtv
-            printf("user com pid: %d nao encontrado.\n", pid);
+
+        if (!encontra) {
+            // Caso o usuário não seja encontrado
+            printf("Usuário com PID %d não encontrado.\n", pid);
+            strcpy(resposta->corpo, "Erro: Usuário não encontrado.\n");
         }
     }
-    
+
+
     if(strcmp(comando,"unsubscribe") == 0){
         char topico[20];
         sscanf(corpo,"%s",topico);
@@ -258,51 +270,74 @@ void processa_comando_feed(msg *resposta,char *corpo, char *comando, int pid, vo
     }
 
     if (strcmp(comando,"topics") == 0) {  
+        if(mngr->ntopicos==0){printf("\nNão ha topicos\n");strcpy(resposta->corpo,"\nNão ha topicos");}
+        else{
+            
             for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
-                    printf("topico %d: %s\n", i + 1, mngr->topicos[i].topico);
-                    sprintf(resposta->corpo, "topico %d: %s\n", i + 1, mngr->topicos[i].topico);
+                    printf("topico %d: %s, (%d subscritos)\n", i + 1, mngr->topicos[i].topico, mngr->topicos[i].ninscritos);
+                    sprintf(resposta->corpo, "topico %d: %s, (%d subscritos)\n", i + 1, mngr->topicos[i].topico, mngr->topicos[i].ninscritos);
             }
-        }
-
-    if (strcmp(comando, "msg") == 0) {
-    char topico[20];
-    int duracao;
-    char msgp[100]; 
-
-    sscanf(corpo, "%s %d %[^\n]", topico, &duracao, msgp);
-
-    printf("\n\ntest:%s\n\n",msgp);
-
-    for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
-        if (strcmp(mngr->topicos[i].topico, topico) == 0) {
-            if (duracao > 0) {
-                if (mngr->topicos[i].npersistentes < MAXMSGS) {
-                    int j = mngr->topicos[i].npersistentes;
-
-                    strcpy(mngr->topicos[i].conteudo[j].corpo, msgp);
-                    mngr->topicos[i].conteudo[j].duracao = duracao;
-
-                    (mngr->topicos[i].npersistentes)++;
-
-                    printf("\nMensagem adicionada ao tópico '%s', com duração de %d segundos:\n%s\n\n",
-                           mngr->topicos[i].topico,
-                           mngr->topicos[i].conteudo[j].duracao,
-                           mngr->topicos[i].conteudo[j].corpo);
-
-                    sprintf(resposta->corpo, "Conteúdo adicionado ao tópico %s:\n%s", mngr->topicos[i].topico, msgp);
-                    printf("resposta->corpo:%s\n\n",resposta->corpo);
-                } else {
-                    printf("\nErro: limite de mensagens para o tópico '%s' foi atingido.\n", topico);
-                    sprintf(resposta->corpo, "Erro: limite de mensagens no tópico %s atingido.", topico);
-                }
-            }
-            return; 
         }
     }
 
-    sprintf(resposta->corpo, "Erro: tópico %s não encontrado.", topico);
+    if (strcmp(comando, "msg") == 0) {
+        char topico[20];
+        int duracao;
+        char msgp[100]; 
+
+        // Recebe os parâmetros do corpo da mensagem
+        sscanf(corpo, "%s %d %[^\n]", topico, &duracao, msgp);
+
+        printf("\n\ntest:%s\n\n", msgp);
+
+        // Procura o tópico
+        for (int i = 0; i < mngr->ntopicos && i < MAXTOPICS; i++) {
+            if (strcmp(mngr->topicos[i].topico, topico) == 0) {
+                if (duracao > 0) {
+                    // Verifica se o número de mensagens não ultrapassou o limite
+                    if (mngr->topicos[i].npersistentes < MAXMSGS) {
+                        int j = mngr->topicos[i].npersistentes;
+
+                        // Adiciona a mensagem ao tópico
+                        strcpy(mngr->topicos[i].conteudo[j].corpo, msgp);
+                        mngr->topicos[i].conteudo[j].duracao = duracao;
+                        (mngr->topicos[i].npersistentes)++;
+
+                        printf("\nMensagem adicionada ao tópico '%s', com duração de %d segundos:\n%s\n\n",
+                            mngr->topicos[i].topico,
+                            mngr->topicos[i].conteudo[j].duracao,
+                            mngr->topicos[i].conteudo[j].corpo);
+
+                        // Envia a resposta de sucesso
+                        sprintf(resposta->corpo, "Conteúdo adicionado ao tópico %s:\n%s", mngr->topicos[i].topico, msgp);
+                        printf("resposta->corpo:%s\n\n", resposta->corpo);
+
+                        // Envia a mensagem para todos os usuários inscritos
+                        for (int k = 0; k < mngr->topicos[i].ninscritos; k++) {
+                            pid_t user_pid = mngr->topicos[i].inscritos[k];
+                            
+                            // Aqui, você pode enviar a mensagem para o usuário
+                            // A lógica de envio vai depender de como está estruturado o envio de mensagens no seu sistema
+                            // Um exemplo seria usar um pipe, mas você pode adaptar conforme a sua implementação
+
+                            // Exemplo de envio fictício:
+                            printf("Enviando mensagem para o usuário com PID: %d\n", user_pid);
+                        }
+
+                    } else {
+                        printf("\nErro: limite de mensagens para o tópico '%s' foi atingido.\n", topico);
+                        sprintf(resposta->corpo, "Erro: limite de mensagens no tópico %s atingido.", topico);
+                    }
+                } else {
+                    printf("\nErro: duração inválida para a mensagem no tópico '%s'.\n", topico);
+                    sprintf(resposta->corpo, "Erro: duração inválida para o tópico %s.", topico);
+                }
+                return; 
+            }
+        }
+
+        // Se o tópico não for encontrado
+        sprintf(resposta->corpo, "Erro: tópico %s não encontrado.", topico);
+    }
+
 }
-
-
-}
-
