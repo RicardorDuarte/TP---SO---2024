@@ -21,19 +21,18 @@
 #include <pthread.h>
 
 
-typedef struct 
-{
+typedef struct {
     char ntopico[30];
     pid_t pid;
 } Sub;
 
 
 typedef struct User usr;
-struct User{
-	char nome_utilizador[20];
-	pid_t pid;
+struct User {
+    char nome_utilizador[20];
+    pid_t pid;
     int nsubscritos;
-    Sub subscrito[MAXTOPICS];
+    Sub subscrito[MAXTOPICS]; 
 };
 
 
@@ -50,12 +49,14 @@ struct Mensagem{
 };
 
 typedef struct Topic tp;
-struct Topic{
-	char topico[20];
-	TMensagem conteudo[MAXMSGS];
+typedef struct Topic{
+    char topico[20];
+    TMensagem conteudo[MAXMSGS];
     int npersistentes;
     int lock;
-};
+    int ninscritos;  // Novo campo para armazenar o número de inscritos
+    pid_t inscritos[MAXUSERS]; // Lista de PIDs de usuários inscritos
+} ;
 
 typedef struct Manager man;
 struct Manager{
