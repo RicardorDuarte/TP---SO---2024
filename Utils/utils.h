@@ -6,6 +6,10 @@
 #define MAXTOPICS 20
 #define MAXMSGS 50
 
+//pipes
+#define ManPipe "MANAGER_FIFO"
+#define FeedPipe "FEED_FIFO[%d]"
+
 // Inclusão de bibliotecas necessárias para o programa
 #include <stdio.h>
 #include <sys/types.h>
@@ -19,6 +23,7 @@
 #include <sys/select.h>
 #include <fcntl.h>
 #include <pthread.h>
+
 
 
 typedef struct {
@@ -45,18 +50,18 @@ typedef struct Mensagem msg;
 struct Mensagem{
     char comando[15];
     char corpo[650];
-	pid_t pid;
+    pid_t pid;
+    int fg1;
 };
 
-typedef struct Topic tp;
-typedef struct Topic{
+typedef struct Topic {
     char topico[20];
     TMensagem conteudo[MAXMSGS];
     int npersistentes;
     int lock;
     int ninscritos;  // Novo campo para armazenar o número de inscritos
     pid_t inscritos[MAXUSERS]; // Lista de PIDs de usuários inscritos
-} ;
+} tp;
 
 typedef struct Manager man;
 struct Manager{
@@ -71,9 +76,9 @@ typedef struct {
     int trinco;
     man *manager;
     pthread_mutex_t *m;
+    usr *usr;
 } TData;
 
 
 
 #endif 
-
