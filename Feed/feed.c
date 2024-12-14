@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
     msg.pid = user.pid;
     strcpy(msg.comando, "login");
     strcpy(msg.corpo, user.nome_utilizador);
+    msg.fg1=0;
 
     if (write(fd_mngr_fifo, &msg, sizeof(msg)) == -1) {
         perror("Erro ao fazer login no servidor");
@@ -133,6 +134,14 @@ int main(int argc, char *argv[]) {
         if (FD_ISSET(fd_feed_fifo, &fds)) { // pipe
             size = read(fd_feed_fifo, &msg2, sizeof(msg2));
             if (size > 0) {
+                if(msg2.fg1==1){
+                printf("Foste expulso pelo administrador.\n");
+                fflush(stdout);
+                close(fd_feed_fifo);
+                close(fd_mngr_fifo);
+                unlink(feedpipe_final);
+                exit(0);}
+
                 printf("\nMensagem do Manager:\n%s\n", msg2.corpo);
                 printf("CMD> ");
                 fflush(stdout);
