@@ -4,7 +4,7 @@
 // Definições de limites para usuários e tópicos
 #define MAXUSERS 10
 #define MAXTOPICS 20
-#define MAXMSGS 50
+#define MAXMSGS 5
 
 //pipes
 #define ManPipe "MANAGER_FIFO"
