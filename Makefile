@@ -1,36 +1,15 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99
 
-MSG_FICH = fich_mensagens
-export MSG_FICH
+all: manager feed
 
-# Fontes e cabeçalhos
-MANAGER_SOURCES = $(wildcard Manager/*.c) $(wildcard Utils/*.c)
-MANAGER_HEADERS = $(wildcard Manager/*.h) $(wildcard Utils/*.h)
+manager: 
+	$(CC) $(CFLAGS) -o manager Manager/manager.c Manager/processocom.c Utils/utils.h -pthread
 
-FEED_SOURCES = $(wildcard Feed/*.c) $(wildcard Utils/*.c)
-FEED_HEADERS = $(wildcard Feed/*.h) $(wildcard Utils/*.h)
+feed: 
+	$(CC) $(CFLAGS) -o feed Feed/feed.c Utils/utils.h -pthread
 
-# Binários
-MANAGER_BIN = manager
-FEED_BIN = feed
-
-# Alvo padrão
-all: $(MANAGER_BIN) $(FEED_BIN)
-
-# Regras para compilar o manager
-$(MANAGER_BIN): $(MANAGER_SOURCES) $(MANAGER_HEADERS)
-	$(CC) $(CFLAGS) -o $@ $(MANAGER_SOURCES) -lpthread
-
-# Regras para compilar o feed
-$(FEED_BIN): $(FEED_SOURCES) $(FEED_HEADERS)
-	$(CC) $(CFLAGS) -o $@ $(FEED_SOURCES) -lpthread
-
-	rm FEED*
-	rm MANAGER_FI*
-
-# Limpar arquivos compilados
 clean:
-	rm -f $(MANAGER_BIN) $(FEED_BIN)
+	rm -f manager feed
 	rm FEED*
 	rm MANAGER_FI*
